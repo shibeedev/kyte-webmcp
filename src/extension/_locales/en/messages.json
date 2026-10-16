@@ -1,0 +1,176 @@
+{
+  "extName": {
+    "message": "Neo WebMCP"
+  },
+  "extDescription": {
+    "message": "Lets AI agents (MCP clients) drive this Chrome natively: pages, video understanding, full DevTools data and WebMCP tools."
+  },
+  "actionTitle": {
+    "message": "Neo WebMCP — waiting for an MCP client"
+  },
+  "actionTitleConnected": {
+    "message": "Neo WebMCP — $1 session(s) connected"
+  },
+  "overlayLabel": {
+    "message": "$1 is controlling this tab"
+  },
+  "overlayPaused": {
+    "message": "Agent paused"
+  },
+  "stop": {
+    "message": "Stop"
+  },
+  "resume": {
+    "message": "Resume"
+  },
+  "stopAll": {
+    "message": "Stop all"
+  },
+  "resumeAll": {
+    "message": "Resume all"
+  },
+  "activityConnected": {
+    "message": "$1 connected"
+  },
+  "activityDisconnected": {
+    "message": "$1 disconnected"
+  },
+  "activityPaused": {
+    "message": "$1 paused by you"
+  },
+  "activityResumed": {
+    "message": "$1 resumed"
+  },
+  "statusWaiting": {
+    "message": "Waiting for an MCP client…"
+  },
+  "statusConnected": {
+    "message": "Connected sessions: $1"
+  },
+  "sectionSessions": {
+    "message": "Sessions"
+  },
+  "sectionActivity": {
+    "message": "Activity"
+  },
+  "sectionWebmcp": {
+    "message": "WebMCP tools on this tab"
+  },
+  "sectionSettings": {
+    "message": "Settings"
+  },
+  "sectionSetup": {
+    "message": "Connect an MCP client"
+  },
+  "noSessions": {
+    "message": "No MCP client is connected yet."
+  },
+  "noActivity": {
+    "message": "No agent activity yet."
+  },
+  "noWebmcp": {
+    "message": "This page exposes no WebMCP tools (or no agent has looked at it yet)."
+  },
+  "settingOverlay": {
+    "message": "Show the indicator on tabs the agent controls"
+  },
+  "settingWhisper": {
+    "message": "Local transcription model (Whisper)"
+  },
+  "whisperTiny": {
+    "message": "tiny — fastest"
+  },
+  "whisperBase": {
+    "message": "base — balanced (default)"
+  },
+  "whisperSmall": {
+    "message": "small — most accurate"
+  },
+  "setupIntro": {
+    "message": "Register the bridge in your MCP client, then start the client. This panel shows the session as soon as it connects."
+  },
+  "setupClaudeCode": {
+    "message": "Claude Code"
+  },
+  "setupJson": {
+    "message": "Other clients (JSON config)"
+  },
+  "copy": {
+    "message": "Copy"
+  },
+  "copied": {
+    "message": "Copied"
+  },
+  "targetFollows": {
+    "message": "follows your active tab"
+  },
+  "targetTab": {
+    "message": "tab $1"
+  },
+  "targetLabel": {
+    "message": "Target"
+  },
+  "callsLabel": {
+    "message": "Calls"
+  },
+  "statePaused": {
+    "message": "Paused"
+  },
+  "stateBusy": {
+    "message": "Working…"
+  },
+  "stateIdle": {
+    "message": "Idle"
+  },
+  "filterPlaceholder": {
+    "message": "Filter activity…"
+  },
+  "portsInfo": {
+    "message": "Looking for bridges on 127.0.0.1 ports $1–$2"
+  },
+  "versionInfo": {
+    "message": "Extension $1 · ID $2"
+  },
+  "dtAgentOn": {
+    "message": "An agent session is working with this tab"
+  },
+  "dtAgentOff": {
+    "message": "No agent session is using this tab right now"
+  },
+  "dtSelection": {
+    "message": "Selected element"
+  },
+  "dtNoSelection": {
+    "message": "Select an element in the Elements panel to share it."
+  },
+  "dtNotePlaceholder": {
+    "message": "Note for the agent (optional)"
+  },
+  "dtSendElement": {
+    "message": "Send to agent"
+  },
+  "dtRequests": {
+    "message": "Recent network requests"
+  },
+  "dtNoRequests": {
+    "message": "Requests made while DevTools is open appear here."
+  },
+  "dtSend": {
+    "message": "Send"
+  },
+  "dtInbox": {
+    "message": "Shared with the agent"
+  },
+  "dtActivity": {
+    "message": "Agent actions on this tab"
+  },
+  "dtEmpty": {
+    "message": "Nothing yet."
+  },
+  "dtRemove": {
+    "message": "Remove"
+  },
+  "dtSent": {
+    "message": "Sent"
+  }
+}

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Neo Test Shop</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 16px; }
+      #drag-src, #drop-zone { display: inline-block; width: 140px; height: 50px; border: 2px dashed #888; margin: 8px; text-align: center; line-height: 50px; }
+      #scrollBox { height: 100px; overflow: auto; border: 1px solid #ccc; width: 300px; }
+      .spacer { height: 1500px; background: linear-gradient(#fff, #eef); }
+      iframe { width: 320px; height: 120px; border: 1px solid #aaa; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Neo Test Shop</h1>
+      <nav aria-label="Main"><a href="/page2.html">Next page</a> · <a id="blankLink" href="/page2.html" target="_blank">Open in new tab</a></nav>
+    </header>
+    <main>
+      <form id="signup" onsubmit="event.preventDefault(); result.textContent = 'submitted:' + email.value;">
+        <label>Email <input id="email" type="email" name="email" required /></label>
+        <label>Password <input id="pw" type="password" name="pw" /></label>
+        <label><input type="checkbox" id="agree" /> I agree</label>
+        <fieldset>
+          <legend>Plan</legend>
+          <label><input type="radio" name="plan" value="free" checked /> Free</label>
+          <label><input type="radio" name="plan" value="pro" id="planPro" /> Pro</label>
+        </fieldset>
+        <label>Country
+          <select id="country"><option value="vn">Vietnam</option><option value="us">United States</option><option value="jp">Japan</option></select>
+        </label>
+        <textarea id="bio" aria-label="Bio"></textarea>
+        <input type="file" id="file" aria-label="Avatar" multiple />
+        <button type="submit">Sign up</button>
+      </form>
+      <div id="result" role="status"></div>
+
+      <h2>Dialogs</h2>
+      <button id="alertBtn" onclick="alert('Hello alert')">Show alert</button>
+      <button id="confirmBtn" onclick="result.textContent = confirm('Sure?') ? 'confirmed' : 'cancelled'">Confirm</button>
+      <button id="promptBtn" onclick="result.textContent = 'prompt:' + prompt('Name?', 'anon')">Prompt</button>
+
+      <h2>Pointer</h2>
+      <div id="hoverTarget" onmouseenter="tip.hidden = false" onmouseleave="tip.hidden = true">Hover me</div>
+      <div id="tip" hidden>Tooltip visible</div>
+      <div id="drag-src" draggable="true">Drag me</div>
+      <div id="drop-zone">Drop here</div>
+      <div id="scrollBox"><div style="height: 1000px">Scrollable content</div></div>
+      <button id="dblBtn" ondblclick="result.textContent = 'double clicked'">Double click me</button>
+
+      <h2>Components</h2>
+      <custom-card></custom-card>
+      <closed-card></closed-card>
+      <iframe id="sameFrame" src="/frame-same.html" title="Same origin frame"></iframe>
+      <iframe id="crossFrame" src="http://127.0.0.1:{{PORT_B}}/frame-cross.html" title="Cross origin frame"></iframe>
+      <img src="/img/pixel.png" width="20" height="20" />
+
+      <h2>Network</h2>
+      <button id="fetchBtn" onclick="fetch('/api/echo', { method: 'POST', body: JSON.stringify({ hello: 'world' }), headers: { 'content-type': 'application/json' } }).then((r) => r.json()).then((j) => (result.textContent = 'echo:' + j.body))">Call API</button>
+      <button id="errBtn" onclick="fetch('/api/error').then((r) => (result.textContent = 'status:' + r.status))">Fail API</button>
+      <button id="throwBtn" onclick="setTimeout(() => { throw new Error('Boom from test'); })">Throw</button>
+      <button id="popupBtn" onclick="window.open('/page2.html')">Open popup</button>
+      <div class="spacer"></div>
+      <p id="bottom">Bottom of the page</p>
+    </main>
+    <script>
+      document.getElementById('drag-src').addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', 'payload-42'));
+      const zone = document.getElementById('drop-zone');
+      zone.addEventListener('dragover', (e) => e.preventDefault());
+      zone.addEventListener('drop', (e) => { e.preventDefault(); result.textContent = 'dropped:' + e.dataTransfer.getData('text/plain'); });
+      customElements.define('custom-card', class extends HTMLElement {
+        connectedCallback() {
+          const root = this.attachShadow({ mode: 'open' });
+          root.innerHTML = '<p>Shadow text</p><button id="shadowBtn">Shadow button</button>';
+          root.getElementById('shadowBtn').onclick = () => (result.textContent = 'shadow clicked');
+        }
+      });
+      customElements.define('closed-card', class extends HTMLElement {
+        connectedCallback() {
+          const root = this.attachShadow({ mode: 'closed' });
+          root.innerHTML = '<button>Closed shadow button</button>';
+          root.querySelector('button').onclick = () => (result.textContent = 'closed shadow clicked');
+        }
+      });
+      console.log('page loaded', { a: 1, list: [1, 2, 3] });
+      console.warn('a warning');
+      console.error('an error message');
+      window.appState = { user: 'tester', items: [1, 2, 3], el: document.body };
+    </script>
+  </body>
+</html>

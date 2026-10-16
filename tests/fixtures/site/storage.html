@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Storage fixture</title>
+    <link rel="manifest" href="/manifest.json" />
+    <style>.big { color: red; } .unused-rule { color: blue; } .also-unused { margin: 4px; }</style>
+  </head>
+  <body>
+    <main>
+      <h1 class="big">Storage fixture</h1>
+      <div id="status">loading</div>
+      <button id="ws" onclick="openSocket()">Open WebSocket</button>
+    </main>
+    <script>
+      document.cookie = 'session_id=abc123; path=/';
+      document.cookie = 'theme=dark; path=/';
+      // SameSite=None without Secure is rejected and reported in the DevTools Issues panel.
+      document.cookie = 'issue_cookie=1; SameSite=None; path=/';
+      localStorage.setItem('user', JSON.stringify({ name: 'tester', plan: 'pro' }));
+      localStorage.setItem('counter', '7');
+      sessionStorage.setItem('tab', 'one');
+      const req = indexedDB.open('shopdb', 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        const store = db.createObjectStore('products', { keyPath: 'id' });
+        store.createIndex('byName', 'name');
+        db.createObjectStore('logs', { autoIncrement: true });
+      };
+      req.onsuccess = async () => {
+        const db = req.result;
+        const tx = db.transaction(['products', 'logs'], 'readwrite');
+        tx.objectStore('products').put({ id: 1, name: 'Pen', price: 2, tags: ['office'] });
+        tx.objectStore('products').put({ id: 2, name: 'Book', price: 12, added: new Date('2026-01-02') });
+        tx.objectStore('logs').add({ msg: 'hello' });
+        tx.oncomplete = async () => {
+          db.close();
+          const cache = await caches.open('assets-v1');
+          await cache.put('/cached/a.json', new Response('{"a":1}', { headers: { 'content-type': 'application/json' } }));
+          await cache.put('/cached/b.txt', new Response('b'));
+          await navigator.serviceWorker.register('/sw.js');
+          document.getElementById('status').textContent = 'ready';
+        };
+      };
+      window.openSocket = () => {
+        const ws = new WebSocket(`ws://${location.host}/ws`);
+        ws.onopen = () => ws.send('ping from page');
+        ws.onmessage = (e) => (document.getElementById('status').textContent = 'ws:' + e.data);
+      };
+    </script>
+  </body>
+</html>

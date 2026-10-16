@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>WebMCP todo fixture</title>
+  </head>
+  <body>
+    <main>
+      <h1>Todo app with WebMCP</h1>
+      <ul id="list" aria-label="Todos"></ul>
+      <form id="search" toolname="search_products" tooldescription="Search the product catalog by keyword and return the matching product names." toolautosubmit>
+        <label for="q">Keyword</label>
+        <input id="q" name="query" required toolparamdescription="Keyword to search for, case-insensitive" />
+        <button type="submit">Search</button>
+      </form>
+      <div id="results" role="status"></div>
+    </main>
+    <script>
+      const todos = [];
+      const render = () => (document.getElementById('list').innerHTML = todos.map((t) => `<li>${t}</li>`).join(''));
+      const mc = document.modelContext;
+      if (mc) {
+        mc.registerTool({
+          name: 'add_todo',
+          description: 'Add a todo item to the visible list and return how many todos there are now.',
+          inputSchema: { type: 'object', properties: { text: { type: 'string', description: 'The todo text' } }, required: ['text'] },
+          execute: async ({ text }) => {
+            todos.push(text);
+            render();
+            return `Added "${text}". ${todos.length} todos.`;
+          },
+        });
+        mc.registerTool({
+          name: 'list_todos',
+          description: 'List every todo item currently shown in the list.',
+          inputSchema: { type: 'object', properties: {} },
+          annotations: { readOnlyHint: true },
+          execute: async () => ({ todos }),
+        });
+        mc.registerTool({
+          name: 'clear_todos',
+          description: 'Delete every todo item from the list. This cannot be undone.',
+          inputSchema: { type: 'object', properties: {} },
+          annotations: { consequentialHint: true },
+          execute: async () => {
+            todos.length = 0;
+            render();
+            return 'cleared';
+          },
+        });
+        // Deliberately poor tool for the agent-readiness audit.
+        mc.registerTool({ name: 'BadTool', description: 'x', inputSchema: { type: 'object', properties: { a: { type: 'string' } } }, execute: async () => 'ok' });
+      }
+      document.getElementById('search').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const q = String(new FormData(e.target).get('query'));
+        const found = ['Pen', 'Pencil', 'Paper', 'Book'].filter((p) => p.toLowerCase().includes(q.toLowerCase()));
+        document.getElementById('results').textContent = found.join(', ');
+        if (e.respondWith) e.respondWith(Promise.resolve({ query: q, found }));
+      });
+    </script>
+  </body>
+</html>

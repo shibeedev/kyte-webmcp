@@ -1,0 +1,4 @@
+body { font-family: system-ui, sans-serif; margin: 20px; }
+#hero { font-size: 40px; }
+.never-used-selector { color: hotpink; }
+.another-unused { border: 1px solid green; padding: 3px; }

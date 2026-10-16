@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8" /><title>Cross frame</title></head>
+  <body>
+    <p>Cross-origin frame text</p>
+    <input id="crossInput" aria-label="Cross input" />
+    <button id="crossBtn" onclick="this.textContent = 'Cross frame clicked: ' + document.getElementById('crossInput').value">Cross frame button</button>
+    <script>console.log('hello from cross frame');</script>
+  </body>
+</html>

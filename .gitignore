@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Build output (npm run build / the e2e test build)
+dist/
+dist-test/
+*.tsbuildinfo
+
+# Test browser download, test runs and coverage
+.cache/
+tests/.artifacts/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local environment
+.env
+.env.*
+
+# Editors and OS
+.vscode/
+.idea/
+*.code-workspace
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Personal AI assistant files (not part of the project)
+CLAUDE.md
+CLAUDE.local.md
+.claude/

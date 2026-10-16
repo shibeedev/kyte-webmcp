@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>DRM fixture</title>
+    <style>body { font-family: system-ui, sans-serif; margin: 16px; } video { display: block; margin: 8px 0; background: #000; }</style>
+  </head>
+  <body>
+    <main>
+      <h1>Encrypted Media Extensions (Clear Key)</h1>
+      <video id="d1" width="320" height="180" muted aria-label="Encrypted black"></video>
+      <video id="d2" width="320" height="180" muted aria-label="Encrypted red"></video>
+      <p>Status: <span id="drmStatus">loading</span></p>
+    </main>
+    <script>
+      // Same key for both files (made with ffmpeg -encryption_scheme cenc-aes-ctr).
+      const KEY_ID = 'a7e61c373e219033c21091fa607bf3b8';
+      const KEY = '76a6c65c5ea762046bd749a2e632ccbb';
+      const MIME = 'video/mp4; codecs="avc1.42C01E"';
+      const b64url = (hex) => btoa(String.fromCharCode(...hex.match(/../g).map((h) => parseInt(h, 16)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+      async function play(video, url) {
+        const access = await navigator.requestMediaKeySystemAccess('org.w3.clearkey', [{ initDataTypes: ['keyids'], videoCapabilities: [{ contentType: MIME }] }]);
+        const keys = await access.createMediaKeys();
+        await video.setMediaKeys(keys);
+        // ffmpeg writes no pssh box, so no "encrypted" event comes: request the key by its id up front.
+        const session = keys.createSession();
+        session.addEventListener('message', () => {
+          const license = { keys: [{ kty: 'oct', kid: b64url(KEY_ID), k: b64url(KEY) }], type: 'temporary' };
+          session.update(new TextEncoder().encode(JSON.stringify(license))).catch((err) => (drmStatus.textContent = 'license error: ' + err.message));
+        });
+        await session.generateRequest('keyids', new TextEncoder().encode(JSON.stringify({ kids: [b64url(KEY_ID)] })));
+        const source = new MediaSource();
+        video.src = URL.createObjectURL(source);
+        await new Promise((r) => source.addEventListener('sourceopen', r, { once: true }));
+        const buffer = source.addSourceBuffer(MIME);
+        buffer.appendBuffer(await (await fetch(url)).arrayBuffer());
+        await new Promise((r) => buffer.addEventListener('updateend', r, { once: true }));
+        source.endOfStream();
+        await new Promise((r) => (video.readyState >= 2 ? r() : video.addEventListener('loadeddata', r, { once: true })));
+      }
+
+      Promise.all([play(d1, '/media/drm-black.mp4'), play(d2, '/media/drm-red.mp4')]).then(
+        () => (drmStatus.textContent = 'ready'),
+        (e) => (drmStatus.textContent = 'error: ' + e.message),
+      );
+    </script>
+  </body>
+</html>

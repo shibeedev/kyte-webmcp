@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Neo MCP</title>
+    <link rel="stylesheet" href="panel.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <strong>Neo MCP</strong>
+      <span id="agent" class="agent"><span class="dot"></span><span id="agent-text"></span></span>
+    </header>
+    <main class="grid">
+      <section class="box">
+        <h2 data-i18n="dtSelection"></h2>
+        <div id="selection" class="selection"></div>
+        <p id="no-selection" class="muted" data-i18n="dtNoSelection"></p>
+        <div class="send">
+          <input id="note" type="text" data-i18n-placeholder="dtNotePlaceholder" />
+          <button id="send-element" class="btn" type="button" data-i18n="dtSendElement" disabled></button>
+        </div>
+      </section>
+      <section class="box">
+        <h2 data-i18n="dtInbox"></h2>
+        <ul id="inbox" class="list"></ul>
+        <p id="no-inbox" class="muted" data-i18n="dtEmpty"></p>
+      </section>
+      <section class="box wide">
+        <h2 data-i18n="dtRequests"></h2>
+        <table class="requests"><tbody id="requests"></tbody></table>
+        <p id="no-requests" class="muted" data-i18n="dtNoRequests"></p>
+      </section>
+      <section class="box wide">
+        <h2 data-i18n="dtActivity"></h2>
+        <ol id="activity" class="list mono"></ol>
+        <p id="no-activity" class="muted" data-i18n="dtEmpty"></p>
+      </section>
+    </main>
+    <script type="module" src="panel.js"></script>
+  </body>
+</html>

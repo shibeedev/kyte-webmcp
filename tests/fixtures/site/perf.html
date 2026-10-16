@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Performance fixture</title>
+    <link rel="stylesheet" href="/perf.css" />
+    <script src="/perf-blocking.js"></script>
+  </head>
+  <body>
+    <main>
+      <h1 id="hero">Performance fixture with a large heading that becomes the LCP element</h1>
+      <div id="shifter"></div>
+      <p>Some content below the shifting area.</p>
+      <button id="slow" onclick="const t = performance.now(); while (performance.now() - t < 250) {} this.textContent = 'done'">Slow button</button>
+    </main>
+    <script>
+      // A layout shift: insert content above existing text after load.
+      setTimeout(() => {
+        const box = document.getElementById('shifter');
+        box.style.height = '180px';
+        box.style.background = '#fde68a';
+      }, 300);
+      // A long task (~120 ms) during load.
+      const start = performance.now();
+      while (performance.now() - start < 120) {}
+    </script>
+  </body>
+</html>

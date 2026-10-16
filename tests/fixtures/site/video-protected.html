@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Protected video fixture</title>
+    <style>body { font-family: system-ui, sans-serif; margin: 16px; } video { display: block; margin: 8px 0; background: #000; }</style>
+  </head>
+  <body>
+    <main>
+      <h1>Protected video</h1>
+      <p>Cross-origin without CORS and served to media elements only: neither direct decoding nor element capture works.</p>
+      <video id="v3" src="http://127.0.0.1:{{PORT_B}}/media/protected.webm" controls width="320" height="180" preload="auto"></video>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,176 @@
+{
+  "extName": {
+    "message": "Neo WebMCP"
+  },
+  "extDescription": {
+    "message": "Cho AI agent (MCP client) điều khiển Chrome này một cách native: trang web, hiểu video, toàn bộ dữ liệu DevTools và tool WebMCP."
+  },
+  "actionTitle": {
+    "message": "Neo WebMCP — đang chờ MCP client"
+  },
+  "actionTitleConnected": {
+    "message": "Neo WebMCP — $1 phiên đang kết nối"
+  },
+  "overlayLabel": {
+    "message": "$1 đang điều khiển tab này"
+  },
+  "overlayPaused": {
+    "message": "Agent đã tạm dừng"
+  },
+  "stop": {
+    "message": "Dừng"
+  },
+  "resume": {
+    "message": "Tiếp tục"
+  },
+  "stopAll": {
+    "message": "Dừng tất cả"
+  },
+  "resumeAll": {
+    "message": "Tiếp tục tất cả"
+  },
+  "activityConnected": {
+    "message": "$1 đã kết nối"
+  },
+  "activityDisconnected": {
+    "message": "$1 đã ngắt kết nối"
+  },
+  "activityPaused": {
+    "message": "Bạn đã tạm dừng $1"
+  },
+  "activityResumed": {
+    "message": "$1 tiếp tục chạy"
+  },
+  "statusWaiting": {
+    "message": "Đang chờ MCP client…"
+  },
+  "statusConnected": {
+    "message": "Phiên đang kết nối: $1"
+  },
+  "sectionSessions": {
+    "message": "Phiên làm việc"
+  },
+  "sectionActivity": {
+    "message": "Nhật ký hoạt động"
+  },
+  "sectionWebmcp": {
+    "message": "Tool WebMCP của tab này"
+  },
+  "sectionSettings": {
+    "message": "Cài đặt"
+  },
+  "sectionSetup": {
+    "message": "Kết nối MCP client"
+  },
+  "noSessions": {
+    "message": "Chưa có MCP client nào kết nối."
+  },
+  "noActivity": {
+    "message": "Agent chưa có hoạt động nào."
+  },
+  "noWebmcp": {
+    "message": "Trang này không công bố tool WebMCP nào (hoặc agent chưa xem trang này)."
+  },
+  "settingOverlay": {
+    "message": "Hiện chỉ báo trên tab mà agent đang điều khiển"
+  },
+  "settingWhisper": {
+    "message": "Model chép lời trên máy (Whisper)"
+  },
+  "whisperTiny": {
+    "message": "tiny — nhanh nhất"
+  },
+  "whisperBase": {
+    "message": "base — cân bằng (mặc định)"
+  },
+  "whisperSmall": {
+    "message": "small — chính xác nhất"
+  },
+  "setupIntro": {
+    "message": "Khai báo bridge trong MCP client rồi khởi động client. Panel này hiện phiên ngay khi client kết nối."
+  },
+  "setupClaudeCode": {
+    "message": "Claude Code"
+  },
+  "setupJson": {
+    "message": "Client khác (cấu hình JSON)"
+  },
+  "copy": {
+    "message": "Sao chép"
+  },
+  "copied": {
+    "message": "Đã sao chép"
+  },
+  "targetFollows": {
+    "message": "theo tab bạn đang xem"
+  },
+  "targetTab": {
+    "message": "tab $1"
+  },
+  "targetLabel": {
+    "message": "Tab đích"
+  },
+  "callsLabel": {
+    "message": "Số lệnh"
+  },
+  "statePaused": {
+    "message": "Tạm dừng"
+  },
+  "stateBusy": {
+    "message": "Đang làm…"
+  },
+  "stateIdle": {
+    "message": "Rảnh"
+  },
+  "filterPlaceholder": {
+    "message": "Lọc nhật ký…"
+  },
+  "portsInfo": {
+    "message": "Đang tìm bridge trên 127.0.0.1, cổng $1–$2"
+  },
+  "versionInfo": {
+    "message": "Extension $1 · ID $2"
+  },
+  "dtAgentOn": {
+    "message": "Có phiên agent đang làm việc với tab này"
+  },
+  "dtAgentOff": {
+    "message": "Hiện không có phiên agent nào dùng tab này"
+  },
+  "dtSelection": {
+    "message": "Phần tử đang chọn"
+  },
+  "dtNoSelection": {
+    "message": "Chọn một phần tử trong bảng Elements để chia sẻ."
+  },
+  "dtNotePlaceholder": {
+    "message": "Ghi chú cho agent (không bắt buộc)"
+  },
+  "dtSendElement": {
+    "message": "Gửi cho agent"
+  },
+  "dtRequests": {
+    "message": "Request mạng gần đây"
+  },
+  "dtNoRequests": {
+    "message": "Các request phát sinh khi DevTools đang mở sẽ hiện ở đây."
+  },
+  "dtSend": {
+    "message": "Gửi"
+  },
+  "dtInbox": {
+    "message": "Đã chia sẻ với agent"
+  },
+  "dtActivity": {
+    "message": "Hành động của agent trên tab này"
+  },
+  "dtEmpty": {
+    "message": "Chưa có gì."
+  },
+  "dtRemove": {
+    "message": "Xóa"
+  },
+  "dtSent": {
+    "message": "Đã gửi"
+  }
+}

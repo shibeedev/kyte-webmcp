@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Video fixture</title>
+    <style>body { font-family: system-ui, sans-serif; margin: 16px; } video { display: block; margin: 8px 0; background: #000; }</style>
+  </head>
+  <body>
+    <main>
+      <h1>Video fixture</h1>
+      <video id="v1" src="/media/sample.mp4" controls width="640" height="360" preload="auto" aria-label="Scene demo">
+        <track kind="captions" src="/media/sample.vtt" srclang="en" label="English" />
+      </video>
+      <p>A cross-origin copy without CORS headers (tainted canvas, silent captureStream):</p>
+      <video id="v2" src="http://127.0.0.1:{{PORT_B}}/media/sample.webm" controls width="320" height="180" preload="auto"></video>
+    </main>
+  </body>
+</html>

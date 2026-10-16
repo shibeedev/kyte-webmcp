@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Autoplay fixture</title>
+    <style>body { font-family: system-ui, sans-serif; margin: 16px; } video { display: block; margin: 8px 0; background: #000; }</style>
+  </head>
+  <body>
+    <main>
+      <h1>Playback needs a user gesture</h1>
+      <video id="v4" src="/media/sample.mp4" width="320" height="180" preload="auto"></video>
+      <p>The page's own play() without a gesture: <span id="autoplay">pending</span></p>
+    </main>
+    <script>
+      const v4 = document.getElementById('v4');
+      v4.addEventListener(
+        'loadeddata',
+        () => {
+          v4.play().then(
+            () => {
+              document.getElementById('autoplay').textContent = 'played';
+              v4.pause();
+              v4.currentTime = 0;
+            },
+            (e) => (document.getElementById('autoplay').textContent = e.name),
+          );
+        },
+        { once: true },
+      );
+    </script>
+  </body>
+</html>
