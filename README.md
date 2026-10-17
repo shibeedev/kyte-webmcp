@@ -1,33 +1,72 @@
 # Neo WebMCP
 
-MCP server chạy dưới dạng extension Chrome. Agent AI (Claude Code, Claude Desktop, Cursor… hoặc bất kỳ MCP client nào dùng stdio) điều khiển **chính Chrome bạn đang dùng**: thao tác mọi thứ như người thật, xem và hiểu video, đọc toàn bộ dữ liệu DevTools, và gọi các tool WebMCP mà website tự công bố.
+**Your real Chrome as an MCP server, with WebMCP built in.**
+
+Neo WebMCP is an MCP server delivered as a Chrome extension. AI agents (Claude Code, Claude Desktop, Cursor, or any MCP client that speaks stdio) drive **the Chrome you already use**, with your logins and extensions: they operate pages like a person, watch and understand video, read everything DevTools sees, and, through **WebMCP**, call the tools that websites publish for agents.
 
 ```mermaid
 flowchart LR
     A["MCP client"] <-- stdio --> B["Bridge (Node)"]
-    B <-- "WebSocket 127.0.0.1" --> E["Extension Neo WebMCP"]
-    E <-- "DevTools Protocol" --> T["Tab, iframe, worker của bạn"]
+    B <-- "WebSocket 127.0.0.1" --> E["Neo WebMCP extension"]
+    E <-- "DevTools Protocol" --> T["Your tabs, iframes, workers"]
+    E <-- "WebMCP" --> W["Tools the website publishes"]
 ```
 
-## Tính năng chính
+## WebMCP, first class
 
-- **Điều khiển trình duyệt native** — tab, điều hướng, cây accessibility có ref ổn định (`e12`), click/gõ/kéo thả/upload/dialog bằng sự kiện chuột-phím tin cậy, xuyên shadow DOM và iframe khác origin; ảnh chụp có đánh nhãn Set-of-Mark; tải xuống, lịch sử, bookmark, clipboard, PDF.
-- **Xem và hiểu video** — liệt kê video, điều khiển phát, lấy khung hình tại thời điểm bất kỳ (kể cả video khác origin), storyboard dạng lưới, phụ đề (WebVTT, SRT, TTML, YouTube), phiên âm bằng Whisper **chạy ngay trên máy** (audio không rời máy), `video_watch` trả storyboard + lời thoại trong một lần gọi.
-- **Đọc mọi dữ liệu DevTools** — Console, Network (chi tiết, body, WebSocket, HAR, mock/chặn), Core Web Vitals, Performance trace có phân tích, Coverage, Elements (box model, CSS rule, event listener), Application (cookie, storage, IndexedDB, Cache, service worker), Issues, Memory (heap snapshot), Media, giả lập thiết bị/mạng/CPU, và `cdp_send` cho mọi lệnh DevTools Protocol.
-- **DevTools hai chiều** — panel "Neo MCP" trong DevTools: bạn chọn phần tử hoặc request rồi "Gửi cho agent" kèm ghi chú; agent có thể mở phần tử/file nguồn cho bạn xem.
-- **WebMCP** — đọc và gọi tool trang web công bố qua `document.modelContext` hoặc `<form toolname>`; tool của trang tự xuất hiện thành tool MCP `site_*`; chấm điểm mức sẵn sàng cho agent.
-- **Nhiều agent cùng lúc** — mỗi MCP client là một phiên riêng với nhóm tab màu riêng; các phiên không lẫn nhau.
-- **Bạn luôn nắm quyền** — agent tự động hoàn toàn, nhưng tab đang bị điều khiển có viền báo hiệu và nút **Dừng**; side panel có Dừng/Tiếp tục từng phiên hoặc tất cả, và nhật ký hoạt động.
+[WebMCP](https://github.com/webmachinelearning/webmcp) is a proposed web standard (a draft report of the W3C Web Machine Learning Community Group) that lets a web page publish tools for AI agents, either from script with `document.modelContext.registerTool()` or declaratively with `<form toolname>`. Instead of guessing which buttons to click, the agent calls the site's own functions with typed input.
 
-Giao diện theo ngôn ngữ Chrome: tiếng Việt hoặc tiếng Anh (mặc định tiếng Anh).
+Neo WebMCP turns those page tools into MCP tools:
 
-## Yêu cầu
+- **Auto-exposed to your agent.** Every WebMCP tool of the tab the agent is working on appears in the client's tool list as `site_<name>`, with the page's input schema. The page's read-only and consequential hints become the MCP `readOnlyHint` and `destructiveHint` annotations.
+- **Always current.** The tool list is refreshed (`notifications/tools/list_changed`) when the page adds or removes tools, when it navigates away, and when the agent switches to another tab.
+- **Works with any client.** Clients without dynamic tool lists use `webmcp_list` and `webmcp_call` instead.
+- **Script and declarative tools, in every frame** of the page.
+- **Safe by default.** Tool output is marked as untrusted content from the website, and the agent is told never to follow instructions found inside it.
+- **For site builders.** `agent_readiness_audit` scores a page with Lighthouse's "Agentic Browsing" criteria (accessibility tree quality, layout stability, WebMCP tools and the quality of their descriptions and schemas, `llms.txt`). The `test_webmcp_tools` prompt exercises your tools and reviews their descriptions and schemas.
 
-- Chrome (desktop) 125 trở lên; đã kiểm thử trên Chrome 155. WebMCP cần Chrome 149+ (xem [WebMCP](#webmcp)).
-- Node.js 22.18 trở lên.
-- Một MCP client hỗ trợ server stdio.
+A page that publishes two tools:
 
-## Cài đặt
+```html
+<script>
+  document.modelContext?.registerTool({
+    name: 'add_todo',
+    description: 'Add a todo item to the visible list and return how many todos there are now.',
+    inputSchema: { type: 'object', properties: { text: { type: 'string', description: 'The todo text' } }, required: ['text'] },
+    execute: async ({ text }) => {
+      /* update the page */
+      return `Added "${text}".`;
+    },
+  });
+</script>
+
+<form toolname="search_products" tooldescription="Search the product catalog by keyword and return the matching product names." toolautosubmit>
+  <input name="query" required toolparamdescription="Keyword to search for, case-insensitive" />
+</form>
+```
+
+The agent then sees `site_add_todo` and `site_search_products` next to Neo WebMCP's own tools, and calls them like any other MCP tool.
+
+**Enabling WebMCP:** it needs Chrome 149 or newer, either on a site enrolled in the WebMCP origin trial, or locally by turning on `chrome://flags/#enable-webmcp-testing` and restarting Chrome. When WebMCP is not available, `webmcp_list` explains how to enable it instead of returning an empty list.
+
+## More features
+
+- **Native browser control.** Tabs, navigation, an accessibility tree with stable refs (`e12`), click, type, drag, upload and dialogs with trusted mouse and keyboard events, through shadow DOM and cross-origin iframes, also on background tabs. Screenshots with Set-of-Mark labels. Downloads, history, bookmarks, clipboard, PDF.
+- **Video understanding.** List videos, control playback, grab frames at any time (cross-origin videos included), build a storyboard grid, read captions (WebVTT, SRT, TTML, YouTube), and transcribe speech with Whisper **running on your machine** (audio never leaves it). `video_watch` returns a storyboard and the speech timeline in one call.
+- **All of DevTools.** Console, Network (details, bodies, WebSocket frames, HAR, mocking and blocking), Core Web Vitals, Performance traces with analysis, Coverage, Elements (box model, CSS rules, event listeners), Application (cookies, storage, IndexedDB, Cache Storage, service workers), Issues, Memory (heap snapshots), Media, device, network and CPU emulation, and `cdp_send` for any DevTools Protocol command.
+- **Two-way DevTools.** A "Neo MCP" panel inside DevTools: select an element or a request and send it to the agent with a note; the agent can reveal an element or a source line in your DevTools.
+- **Many agents at once.** Each MCP client is its own session with its own colored tab group; sessions never mix.
+- **You stay in control.** The agent works fully automatically, but a controlled tab shows a border and a **Stop** button, and the side panel offers Stop and Resume per session or for all, plus a live activity log.
+
+The extension UI follows Chrome's language: English or Vietnamese (English by default).
+
+## Requirements
+
+- Desktop Chrome 125 or newer; tested on Chrome 155. WebMCP needs Chrome 149 or newer (see [WebMCP, first class](#webmcp-first-class)).
+- Node.js 22.18 or newer.
+- An MCP client that supports stdio servers.
+
+## Installation
 
 **1. Build**
 
@@ -36,103 +75,103 @@ npm install
 npm run build
 ```
 
-Kết quả: extension ở `dist/extension/`, bridge ở `dist/bridge/cli.mjs`.
+This produces the extension in `dist/extension/` and the bridge at `dist/bridge/cli.mjs`.
 
-**2. Nạp extension vào Chrome**
+**2. Load the extension into Chrome**
 
-Mở `chrome://extensions`, bật **Developer mode**, bấm **Load unpacked** và chọn thư mục `dist/extension`. Bấm biểu tượng Neo WebMCP trên thanh công cụ để mở side panel.
+Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and pick the `dist/extension` folder. Click the Neo WebMCP toolbar icon to open the side panel.
 
-**3. Thêm vào MCP client**
+**3. Add it to your MCP client**
 
 Claude Code:
 
 ```bash
-claude mcp add neo-webmcp -- node "/đường/dẫn/tới/neo-webmcp/dist/bridge/cli.mjs"
+claude mcp add neo-webmcp -- node "/path/to/neo-webmcp/dist/bridge/cli.mjs"
 ```
 
-Client dùng file cấu hình JSON (Claude Desktop, Cursor…):
+Clients configured with JSON (Claude Desktop, Cursor…):
 
 ```json
 {
   "mcpServers": {
     "neo-webmcp": {
       "command": "node",
-      "args": ["/đường/dẫn/tới/neo-webmcp/dist/bridge/cli.mjs"]
+      "args": ["/path/to/neo-webmcp/dist/bridge/cli.mjs"]
     }
   }
 }
 ```
 
-Sau lần kết nối đầu tiên, mục **Kết nối MCP client** (*Connect an MCP client*) trong side panel hiện sẵn hai đoạn trên với đường dẫn thật trên máy bạn, tiện thêm client khác.
+After the first connection, the **Connect an MCP client** section of the side panel shows both snippets with the real path on your machine, which makes adding more clients easy.
 
-**4. Kiểm tra**
+**4. Check**
 
-Khởi động MCP client: side panel đổi từ *Đang chờ MCP client…* sang *Phiên đang kết nối: 1* và phiên mới hiện trong danh sách. Thử hỏi agent: *"Dùng browser_status rồi chụp màn hình tab hiện tại"*.
+Start your MCP client: the side panel changes from *Waiting for an MCP client…* to *Connected sessions: 1* and lists the new session. Try asking the agent: *"Use browser_status, then take a screenshot of the current tab."*
 
-Extension tự tìm bridge trên cổng 127.0.0.1:17831–17840; mỗi MCP client chiếm một cổng, nên tối đa 10 client cùng lúc.
+The extension finds bridges on 127.0.0.1 ports 17831–17840. Each MCP client takes one port, so up to 10 clients can be connected at once.
 
-## Kênh DevTools đầy đủ
+## Full DevTools channel
 
-Chrome chỉ cho extension dùng một phần DevTools Protocol. Các tính năng sau cần **kênh DevTools đầy đủ**: heap snapshot (`memory` action `snapshot`), JavaScript coverage, thông tin codec/decoder kiểu panel Media, và `cdp_send` với các domain bị chặn (Profiler, HeapProfiler, Memory, Media, IndexedDB, ServiceWorker, Security, Animation, Preload…). Khi chưa có kênh này, các tool đó vẫn trả phần lấy được và kèm hướng dẫn bật.
+Chrome lets extensions use only part of the DevTools Protocol. These features need the **full DevTools channel**: heap snapshots (`memory` action `snapshot`), JavaScript coverage, codec and decoder details like the Media panel, and `cdp_send` with the blocked domains (Profiler, HeapProfiler, Memory, Media, IndexedDB, ServiceWorker, Security, Animation, Preload…). Without the channel, these tools still return what they can, plus instructions for turning it on.
 
-Có hai cách, chọn một:
+There are two ways to get it; pick one.
 
-**Cách A — trình duyệt riêng cho agent (không bao giờ hỏi):**
+**Option A: a separate browser for the agent (never asks):**
 
 ```bash
 node dist/bridge/cli.mjs chrome
 ```
 
-Lệnh mở Chrome với profile riêng ở `~/.neo-webmcp/chrome-profile` và bật remote debugging. Đăng nhập trong profile này được giữ lại cho lần sau. Tùy chọn: `--chrome-path <exe>`, `--profile-dir <thư mục>`, `--url <địa chỉ>`.
+This starts Chrome with its own profile in `~/.neo-webmcp/chrome-profile` and remote debugging turned on. Logins made in this profile are kept for next time. Options: `--chrome-path <exe>`, `--profile-dir <folder>`, `--url <address>`.
 
-Chrome bản thương hiệu (Google Chrome) bỏ qua việc tự nạp extension qua dòng lệnh; khi đó lệnh in ra hướng dẫn: trong cửa sổ vừa mở, vào `chrome://extensions` → **Load unpacked** → chọn `dist/extension`. Chỉ cần làm **một lần** cho profile này.
+Branded Google Chrome ignores loading extensions from the command line. In that case the command prints what to do: in the window that opened, go to `chrome://extensions`, click **Load unpacked** and pick `dist/extension`. This is needed **once** per profile.
 
-**Cách B — Chrome thường của bạn:**
+**Option B: your normal Chrome:**
 
-Mở `chrome://inspect/#remote-debugging` và bật remote debugging. Lần đầu agent cần kênh đầy đủ, Chrome hỏi cho phép — bấm **Allow**. Neo WebMCP giữ một kết nối duy nhất dùng chung cho mọi agent, nên hộp thoại này hiện **tối đa một lần mỗi lần mở Chrome**. Neo WebMCP không bao giờ tự bấm hộp thoại đó thay bạn.
+Open `chrome://inspect/#remote-debugging` and turn remote debugging on. The first time the agent needs the full channel, Chrome asks for permission; click **Allow**. Neo WebMCP keeps a single connection shared by all agents, so this prompt appears **at most once per Chrome start**. Neo WebMCP never clicks that prompt for you.
 
-Kết nối do một tiến trình nền nhỏ ("broker") giữ, tự khởi động khi cần và tự thoát khi Chrome đóng. `browser_status` cho biết kênh đang ở trạng thái nào.
+The connection is held by a small background process (the "broker") that starts when needed and exits when Chrome closes. `browser_status` shows the state of the channel.
 
-## WebMCP
+## Video and Whisper
 
-WebMCP là chuẩn W3C (đang thử nghiệm) cho phép trang web tự công bố tool cho agent. Trên Chrome 149+, bật `chrome://flags/#enable-webmcp-testing` rồi khởi động lại Chrome (hoặc dùng site thuộc origin trial).
+- Captions are preferred when they exist (`<track>` elements, caption files downloaded by the player, YouTube). Otherwise speech is transcribed with Whisper running locally (Transformers.js, CPU).
+- Pick the model in the side panel: `tiny` (fastest), `base` (default) or `small` (most accurate). The first use downloads the model from Hugging Face into `~/.cache/neo-webmcp/models` (about 76 MB for `base`); later runs use the saved copy.
+- Audio source (`source`): the default `auto` tries, in order, decoding the media file directly when the video has a direct URL (cross-origin included); then capturing the playing element in real time (streams and MSE; you still hear it); then capturing the whole tab's audio if you allowed it by clicking the Neo WebMCP icon on that tab. If none works, the agent gets the reason for each attempt and how to grant access. The agent can also ask for `decode`, `stream` or `tab` directly. Silent segments are reported as silent instead of returning an empty transcript.
 
-- `webmcp_list` liệt kê tool của trang (mọi frame), kèm gợi ý readOnly / consequential / untrustedContent.
-- `webmcp_call` gọi tool; kết quả luôn được đánh dấu là dữ liệu không tin cậy.
-- Tool của tab đích tự xuất hiện trong danh sách tool MCP với tiền tố `site_` (ví dụ `site_add_todo`) và client được thông báo khi danh sách đổi; rời trang thì các tool đó biến mất.
-- `agent_readiness_audit` chấm điểm trang theo tiêu chí "Agentic Browsing" của Lighthouse: chất lượng cây accessibility, độ ổn định layout, tool WebMCP, `llms.txt`.
+## Prompts
 
-## Video và Whisper
+The server provides 5 MCP prompts (in Claude Code, type `/` to pick one):
 
-- Phụ đề được ưu tiên khi có (thẻ `<track>`, phụ đề tải qua mạng, YouTube). Không có thì phiên âm bằng Whisper chạy cục bộ (Transformers.js, CPU).
-- Chọn model trong side panel: `tiny` (nhanh nhất), `base` (mặc định), `small` (chính xác nhất). Lần dùng đầu tiên tải model từ Hugging Face về `~/.cache/neo-webmcp/models` (model `base` khoảng 76 MB); các lần sau dùng bản đã lưu.
-- Nguồn âm thanh (`source`): mặc định `auto` thử lần lượt — giải mã thẳng file media khi video có URL trực tiếp (kể cả khác origin); không được thì thu luồng từ phần tử đang phát theo thời gian thực (stream/MSE; bạn vẫn nghe bình thường); vẫn không được thì thu âm thanh cả tab nếu bạn đã cấp quyền bằng cách bấm biểu tượng Neo WebMCP trên tab đó. Hết cách thì agent nhận lý do của từng cách và hướng dẫn cấp quyền. Agent cũng có thể chỉ định thẳng `decode`, `stream` hoặc `tab`. Đoạn im lặng được báo là im lặng thay vì trả bản phiên âm rỗng.
-
-## Prompt mẫu
-
-Server cung cấp 5 prompt MCP (trong Claude Code gõ `/` để chọn):
-
-| Prompt | Dùng để |
+| Prompt | Use it to |
 |---|---|
-| `debug_page` | Tìm nguyên nhân trang lỗi qua console, network, issues và cây accessibility |
-| `audit_performance` | Đo Web Vitals, ghi trace, đo coverage, tìm nguyên nhân chậm |
-| `watch_video` | Xem và tóm tắt video, trả lời câu hỏi về nội dung |
-| `test_webmcp_tools` | Thử các tool WebMCP của trang và nhận xét chất lượng mô tả/schema |
-| `agent_readiness` | Đánh giá mức sẵn sàng cho agent và cách cải thiện |
+| `debug_page` | Find why a page misbehaves using console, network, issues and the accessibility tree |
+| `audit_performance` | Measure Web Vitals, record a trace, measure coverage and find what slows the page down |
+| `watch_video` | Watch and summarize a video, or answer a question about it |
+| `test_webmcp_tools` | Exercise the page's WebMCP tools and review their descriptions and schemas |
+| `agent_readiness` | Score how well a page works for AI agents and how to improve it |
 
-## Danh sách tool (56)
+## Tools (56)
 
-Mô tả dưới đây là câu đầu trong mô tả mà agent nhận được.
+Each description is the first sentence of what the agent receives.
 
-**Kết nối**
+**WebMCP**
 
-| Tool | Mô tả |
+| Tool | Description |
+|---|---|
+| `webmcp_list` | Lists the tools the page exposes through WebMCP (W3C navigator/document.modelContext, imperative or declarative `<form toolname>`), in every frame: name, description, input schema and the readOnly / consequential / untrustedContent hints. |
+| `webmcp_call` | Calls a WebMCP tool exposed by the page with the given input and returns its output. |
+| `agent_readiness_audit` | Scores how ready the page is for AI agents, following Lighthouse's "Agentic Browsing" criteria: accessibility tree quality (named controls, labelled inputs, image alt text, landmarks, headings), layout stability (CLS), WebMCP tools and the quality of their descriptions/schemas, and llms.txt. |
+| `site_*` | Created on the fly: one MCP tool per WebMCP tool of the current tab. |
+
+**Connection**
+
+| Tool | Description |
 |---|---|
 | `browser_status` | Reports whether the Neo WebMCP Chrome extension is connected to this bridge, the extension and browser versions, the bridge port, and whether the full DevTools channel is available. |
 
-**Tab & điều hướng**
+**Tabs and navigation**
 
-| Tool | Mô tả |
+| Tool | Description |
 |---|---|
 | `tabs_list` | Lists every open tab in every window with its id, title, URL, whether it is active/audible, its tab group, and which tab is this session's target. |
 | `tab_open` | Opens a URL in a new tab, puts it in this session's tab group and makes it the session target tab. |
@@ -142,18 +181,18 @@ Mô tả dưới đây là câu đầu trong mô tả mà agent nhận được.
 | `wait_for` | Waits until text appears or disappears, a CSS selector matches a visible element, the network is idle, or a fixed time passes. |
 | `page_info` | Returns URL, title, load state, language, viewport and scroll position, document size, the frame tree (including cross-origin iframes) and the main document's security details. |
 
-**Đọc hiểu trang**
+**Reading the page**
 
-| Tool | Mô tả |
+| Tool | Description |
 |---|---|
 | `page_snapshot` | Returns the page as a compact accessibility tree (roles, names, states, values) built by Chrome itself, including cross-origin iframes and shadow DOM. |
 | `page_read` | Returns the readable content of the page (or of one element) as Markdown: headings, paragraphs, lists, links, tables, code. |
 | `find` | Finds elements by visible text, CSS selector, XPath, or accessible role/name (searches iframes and shadow DOM) and returns refs with role, name and position. |
 | `screenshot` | Captures the viewport, the full page, or one element. With annotate=true, draws numbered boxes labelled with element refs over interactive elements (Set-of-Mark). |
 
-**Thao tác**
+**Acting on the page**
 
-| Tool | Mô tả |
+| Tool | Description |
 |---|---|
 | `click` | Clicks an element (by ref) or a viewport point with real, trusted mouse events. |
 | `hover` | Moves the mouse over an element (by ref) or a viewport point, triggering hover menus and tooltips. |
@@ -167,9 +206,9 @@ Mô tả dưới đây là câu đầu trong mô tả mà agent nhận được.
 | `dialog` | Accepts or dismisses the JavaScript dialog (alert, confirm, prompt, beforeunload) currently open in the tab. |
 | `evaluate` | Runs JavaScript in the page and returns the result as JSON. |
 
-**Tiện ích trình duyệt**
+**Browser utilities**
 
-| Tool | Mô tả |
+| Tool | Description |
 |---|---|
 | `downloads` | Manages browser downloads: "download" starts downloading a URL, "list" shows recent downloads, "wait" waits for a download to finish, "cancel" cancels one. |
 | `history_search` | Searches the browsing history by text and time range. |
@@ -179,7 +218,7 @@ Mô tả dưới đây là câu đầu trong mô tả mà agent nhận được.
 
 **Video**
 
-| Tool | Mô tả |
+| Tool | Description |
 |---|---|
 | `video_list` | Lists every `<video>`/`<audio>` element on the page, including iframes and shadow DOM: ref, source, duration, position, playing/paused, volume, rate, resolution, live stream or not, DRM, caption tracks, and the detected platform (YouTube, Vimeo…). |
 | `video_control` | Plays, pauses, seeks, changes rate, mutes/unmutes or sets the volume of a video. |
@@ -192,7 +231,7 @@ Mô tả dưới đây là câu đầu trong mô tả mà agent nhận được.
 
 **DevTools**
 
-| Tool | Mô tả |
+| Tool | Description |
 |---|---|
 | `console_logs` | Reads the tab's console like the DevTools Console panel: console.* calls, uncaught exceptions and promise rejections (with stack traces), and browser-side messages (network errors, violations, deprecations) — from the page and its iframes/workers. |
 | `network_requests` | Lists the tab's requests like the DevTools Network panel: id, method, URL, status, type, size, duration, cache, initiator. |
@@ -210,83 +249,75 @@ Mô tả dưới đây là câu đầu trong mô tả mà agent nhận được.
 | `cdp_send` | Sends any Chrome DevTools Protocol command to the tab (or to an iframe via frame ref, or a child session id) and returns the raw result. |
 | `cdp_events` | Subscribes to raw DevTools Protocol events of the tab ("Network.*", "Page.loadEventFired"…) and reads the buffered events. |
 
-**DevTools hai chiều**
+**Two-way DevTools**
 
-| Tool | Mô tả |
+| Tool | Description |
 |---|---|
 | `devtools_context` | When the user has DevTools open on the tab: returns the element currently selected in the Elements panel (selector, HTML, ref) and the items the user sent to the agent from the "Neo MCP" DevTools panel (elements or network requests with notes). |
 | `devtools_reveal` | Shows something to the user in their open DevTools: an element in the Elements panel (ref or selector), or a source file at a line in the Sources panel (url + line). |
 
-**WebMCP**
+Every tool that acts on a tab accepts an optional `tabId`; by default it uses the session's target tab (the tab you are looking at, or the tab the agent opened or selected).
 
-| Tool | Mô tả |
+## Safety and privacy
+
+- The agent works **fully automatically**, on any tab, without asking before each action. Only connect MCP clients you trust.
+- A controlled tab shows a purple border and a "… is controlling this tab" label with a **Stop** button; the side panel has **Stop all** / **Resume all** and Stop / Resume per session. Stop cancels the running command and pauses the session (the border turns amber) until you click Resume. The border can be turned off in the side panel settings.
+- The bridge listens on 127.0.0.1 only and accepts connections from the Neo WebMCP extension only.
+- Audio for transcription is processed by Whisper on your machine and is not sent anywhere.
+- The activity log hides the values of arguments whose names contain password, secret, token, otp, pin, cvv or card. The log is kept for the Chrome session (not written to disk) and is cleared when Chrome closes.
+- Content that comes from web pages (WebMCP tool results included) is marked as untrusted, and the agent is told never to follow instructions found in it.
+- When a session ends, Neo WebMCP removes its debugger, emulation, network mocks and border from the tabs, without closing any tab.
+- `chrome://` pages and the Chrome Web Store are protected by Chrome; the extension cannot control them.
+
+## Configuration
+
+Bridge command line:
+
+| Command | Meaning |
 |---|---|
-| `webmcp_list` | Lists the tools the page exposes through WebMCP (W3C navigator/document.modelContext, imperative or declarative `<form toolname>`), in every frame: name, description, input schema and the readOnly / consequential / untrustedContent hints. |
-| `webmcp_call` | Calls a WebMCP tool exposed by the page with the given input and returns its output. |
-| `agent_readiness_audit` | Scores how ready the page is for AI agents, following Lighthouse's "Agentic Browsing" criteria: accessibility tree quality (named controls, labelled inputs, image alt text, landmarks, headings), layout stability (CLS), WebMCP tools and the quality of their descriptions/schemas, and llms.txt. |
+| `neo-webmcp [--port <n>] [--output-dir <folder>]` | Runs the bridge on stdio (what MCP clients start) |
+| `neo-webmcp chrome [--chrome-path <exe>] [--profile-dir <folder>] [--url <address>]` | Starts Chrome with a dedicated agent profile (full DevTools channel, no prompts) |
+| `neo-webmcp --help` / `--version` | Help / version |
 
-Mọi tool tác động lên tab đều nhận `tabId` tùy chọn; mặc định là tab đích của phiên (tab bạn đang xem, hoặc tab agent đã mở/chọn).
+`neo-webmcp` above is the same as `node dist/bridge/cli.mjs`.
 
-## An toàn và quyền riêng tư
+Environment variables:
 
-- Agent điều khiển **tự động hoàn toàn**, không hỏi từng thao tác, trên mọi tab. Chỉ kết nối MCP client bạn tin tưởng.
-- Tab đang bị điều khiển có viền tím và nhãn "… đang điều khiển tab này" với nút **Dừng** (*Stop*); side panel có **Dừng tất cả** / **Tiếp tục tất cả** và Dừng/Tiếp tục từng phiên. Dừng hủy lệnh đang chạy và tạm dừng phiên (viền chuyển màu hổ phách) cho tới khi bạn bấm Tiếp tục. Có thể tắt viền trong phần cài đặt của side panel.
-- Bridge chỉ nghe trên 127.0.0.1 và chỉ nhận kết nối từ đúng extension Neo WebMCP.
-- Âm thanh để phiên âm được xử lý bằng Whisper trên máy bạn, không gửi đi đâu.
-- Nhật ký hoạt động che giá trị của các tham số có tên chứa password, secret, token, otp, pin, cvv, card. Nhật ký được giữ trong phiên Chrome (không ghi ra đĩa) và mất khi đóng Chrome.
-- Nội dung đến từ trang web (kể cả kết quả tool WebMCP) được đánh dấu là không tin cậy; agent được dặn không làm theo chỉ dẫn nằm trong đó.
-- Phiên kết thúc thì Neo WebMCP gỡ debugger, giả lập, mock mạng và viền báo hiệu khỏi các tab, nhưng không đóng tab nào.
-- Trang `chrome://` và Chrome Web Store được Chrome bảo vệ; extension không điều khiển được.
-
-## Cấu hình
-
-Tham số dòng lệnh của bridge:
-
-| Lệnh | Ý nghĩa |
-|---|---|
-| `neo-webmcp [--port <n>] [--output-dir <thư mục>]` | Chạy bridge trên stdio (MCP client gọi lệnh này) |
-| `neo-webmcp chrome [--chrome-path <exe>] [--profile-dir <thư mục>] [--url <địa chỉ>]` | Mở Chrome profile riêng cho agent (kênh DevTools đầy đủ, không hỏi) |
-| `neo-webmcp --help` / `--version` | Trợ giúp / phiên bản |
-
-`neo-webmcp` ở trên tương đương `node dist/bridge/cli.mjs`.
-
-Biến môi trường:
-
-| Biến | Mặc định | Ý nghĩa |
+| Variable | Default | Meaning |
 |---|---|---|
-| `NEO_WEBMCP_OUTPUT_DIR` | `~/.neo-webmcp/output` | Nơi lưu ảnh, PDF, HAR, trace, heap snapshot khi không chỉ định đường dẫn |
-| `NEO_WEBMCP_MODEL_DIR` | `~/.cache/neo-webmcp/models` | Nơi lưu model Whisper |
-| `NEO_WEBMCP_CDP_ENDPOINT` | — | Endpoint remote debugging cụ thể (`ws://…`) cho kênh DevTools đầy đủ |
-| `NEO_WEBMCP_CHROME_USER_DATA_DIR` | — | Thư mục profile Chrome cần tìm endpoint remote debugging |
-| `NEO_WEBMCP_STATE_DIR` | `~/.neo-webmcp` | Nơi broker ghi thông tin kết nối |
-| `NEO_WEBMCP_NO_DEFAULT_PROFILES` | — | `1` = không bao giờ dò profile Chrome thường (dùng khi chạy test) |
+| `NEO_WEBMCP_OUTPUT_DIR` | `~/.neo-webmcp/output` | Where screenshots, PDFs, HAR files, traces and heap snapshots go when no path is given |
+| `NEO_WEBMCP_MODEL_DIR` | `~/.cache/neo-webmcp/models` | Where Whisper models are stored |
+| `NEO_WEBMCP_CDP_ENDPOINT` | — | A specific remote debugging endpoint (`ws://…`) for the full DevTools channel |
+| `NEO_WEBMCP_CHROME_USER_DATA_DIR` | — | A Chrome profile folder to look for a remote debugging endpoint in |
+| `NEO_WEBMCP_STATE_DIR` | `~/.neo-webmcp` | Where the broker writes its connection info |
+| `NEO_WEBMCP_NO_DEFAULT_PROFILES` | — | `1` = never look at normal Chrome profiles (used by the tests) |
 
-## Phát triển và kiểm thử
+## Development and testing
 
 ```bash
-npm run build        # build extension + bridge vào dist/
-npm run typecheck    # kiểm kiểu TypeScript
-npm run test:unit    # test logic thuần
-npm run test:e2e     # build bản test vào dist-test/ rồi chạy test đầu-cuối với Chrome thật
+npm run build        # build the extension and the bridge into dist/
+npm run typecheck    # TypeScript type check
+npm run test:unit    # pure logic tests
+npm run test:e2e     # build the test build into dist-test/, then run end-to-end tests with a real Chrome
 npm test             # build + unit + e2e
 ```
 
-Test e2e dùng Chrome for Testing 155 với profile tạm, không đụng tới Chrome, thư mục Downloads hay clipboard của bạn. Bản test (`dist-test/`) giống hệt bản thật nhưng bridge dùng cổng 17931–17940, nên kể cả khi Chrome của bạn đang chạy Neo WebMCP và MCP client của bạn đang mở, test và bản thật không bao giờ kết nối nhầm sang nhau. Cài trình duyệt test một lần:
+End-to-end tests use Chrome for Testing 155 with temporary profiles and never touch your Chrome, your Downloads folder or your clipboard. The test build (`dist-test/`) is identical to the real one except that its bridge uses ports 17931–17940, so even while your own Chrome runs Neo WebMCP and your MCP client is open, the tests and your real setup never connect to each other. Install the test browser once:
 
 ```bash
 npx @puppeteer/browsers install chrome@155.0.8059.41 --path .cache/chrome
 ```
 
-Trên macOS/Linux, hoặc để chạy với Chrome khác, đặt `NEO_TEST_CHROME` trỏ tới file chạy Chrome. Bộ `devtools-panel` mở cửa sổ Chrome thật (panel DevTools của extension không chạy được ở chế độ headless). File tạm của test nằm trong `tests/.artifacts/`.
+On macOS/Linux, or to test with another Chrome, set `NEO_TEST_CHROME` to the Chrome executable. The `devtools-panel` suite opens a visible Chrome window (extension DevTools panels do not run headless). Test files go to `tests/.artifacts/`.
 
-Cấu trúc code và luật thêm tính năng: xem [architecture.md](architecture.md). Yêu cầu tính năng: xem [brd.md](brd.md).
+Code structure and the rules for adding features: [architecture.md](architecture.md). Feature requirements: [brd.md](brd.md). Both are written in Vietnamese.
 
-## Giới hạn đã biết
+## Known limitations
 
-- Một số dữ liệu DevTools chỉ có qua kênh DevTools đầy đủ (xem trên).
-- Video có DRM: Chrome không cho đọc khung hình mã hóa trực tiếp, nên tool chụp từ hình hiển thị trên trang; nếu trình phát bảo vệ luôn cả hình hiển thị (ra màu đen), tool báo rõ khung hình bị DRM chặn thay vì trả ảnh đen như kết quả bình thường.
-- Video khác origin không có CORS được chụp từ hình hiển thị trên trang thay vì giải mã khung hình, nên phần tử video phải đang được render.
-- Tab đích ở nền (bạn đang xem tab khác): mọi thao tác vẫn chạy mà không đưa tab lên trước, nhưng `hover` và kéo thả bằng chuột chậm hơn (khoảng 5 giây mỗi lần di chuột, do Chrome chỉ giao sự kiện di chuột cho tab ẩn sau một khoảng chờ), còn cuộn theo khoảng cách được làm bằng script vì Chrome bỏ qua con lăn ở tab ẩn.
-- Thu âm thanh cả tab cần bạn bấm biểu tượng Neo WebMCP trên tab đó trước (quy định của Chrome). Bộ test thay cú bấm đó bằng cờ `--allowlisted-extension-id` của Chromium.
-- Tab bạn tự mở trước khi agent đụng tới: request/console của lần tải trước đó không có (giống mở DevTools sau khi trang đã tải); các tool nhắc agent tải lại khi cần. Tab do agent mở bằng `tab_open` thì được ghi từ đầu.
-- WebMCP còn là tính năng thử nghiệm của Chrome và cần bật cờ.
+- Some DevTools data is only available through the full DevTools channel (see above).
+- DRM-protected video: Chrome does not let anyone read encrypted frames directly, so frames are captured from what the page shows; if the player also protects what is shown (it renders black), the tool says the frame is blocked by DRM instead of returning a black image as a normal result.
+- Cross-origin video without CORS is captured from what the page shows rather than decoded, so the video element must be rendered.
+- Background target tab (you are looking at another tab): everything still works without bringing the tab to the front, but `hover` and mouse-driven drags are slower (about 5 seconds per mouse move, because Chrome delivers mouse moves to hidden tabs only after a delay), and scrolling by an amount is done with script because Chrome ignores the mouse wheel in hidden tabs.
+- Capturing a whole tab's audio needs you to click the Neo WebMCP icon on that tab first (a Chrome rule). The tests stand in for that click with Chromium's `--allowlisted-extension-id` switch.
+- Tabs you opened before the agent touched them: requests and console messages from their earlier load are not available (like opening DevTools after a page has loaded); the tools remind the agent to reload when needed. Tabs the agent opens with `tab_open` are recorded from the start.
+- WebMCP is still an experimental Chrome feature and needs a flag (or a site in the origin trial).
