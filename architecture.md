@@ -1,10 +1,10 @@
-# Kiến trúc Neo WebMCP
+# Kiến trúc Kyte WebMCP Extension
 
 Tài liệu này mô tả cách code được tổ chức và các luật phải giữ khi sửa hoặc thêm module. Yêu cầu tính năng nằm ở `brd.md` (nguồn sự thật duy nhất về hành vi); file này chỉ nói *code đặt ở đâu và nối với nhau thế nào*.
 
 ## 1. Các tiến trình và đường nối
 
-Neo WebMCP chạy trong năm môi trường. Mỗi môi trường có một "core" riêng; tính năng (feature) cắm vào core qua registry.
+Kyte WebMCP chạy trong năm môi trường. Mỗi môi trường có một "core" riêng; tính năng (feature) cắm vào core qua registry.
 
 ```mermaid
 flowchart LR
@@ -42,7 +42,7 @@ flowchart LR
 | Bridge (Node, stdio) | `src/bridge/` | MCP server cho client; mở WebSocket chờ extension; chạy service cần Node (ghi file, Whisper, phân tích trace, kênh DevTools đầy đủ). |
 | Service worker | `src/extension/background/` | Core của extension: điều phối lời gọi tool, giữ phiên CDP, quản lý phiên agent, overlay, UI hub. |
 | Offscreen document | `src/extension/offscreen/` | Những việc cần `document`: clipboard, giải mã audio (`decodeAudioData`), ghi audio tab. |
-| UI | `src/extension/sidepanel/`, `src/extension/devtools/` | Side panel (trạng thái, phiên, nhật ký, cài đặt) và panel "Neo MCP" trong DevTools. |
+| UI | `src/extension/sidepanel/`, `src/extension/devtools/` | Side panel (trạng thái, phiên, nhật ký, cài đặt) và panel "Kyte WebMCP" trong DevTools. |
 | Trong trang | `src/extension/content/overlay.ts` + các `page.ts` của feature | Overlay báo hiệu agent đang điều khiển; hàm chạy trong isolated world của trang. |
 | Broker (Node, detached) | `src/features/full-devtools/broker.ts` | Giữ **một** kết nối remote-debugging tới Chrome, chia sẻ cho mọi bridge. |
 
@@ -67,7 +67,7 @@ flowchart LR
 
 "Fork-isolated" nghĩa là: muốn tách, thay hay bỏ một tính năng thì chỉ đụng thư mục của nó và các dòng của nó trong registry; feature khác không cần biết. Đã kiểm bằng grep: không có import chéo giữa các thư mục feature.
 
-**Ngoại lệ đã biết — `full-devtools`:** đây là feature hạ tầng. `src/bridge/cli.ts` import trực tiếp `client.ts`, `broker.ts`, `launcher.ts` (vì nó cung cấp lệnh con `neo-webmcp broker` và `neo-webmcp chrome`), và `BridgeContext.fullCdp` có kiểu `FullCdpClient`. Bỏ feature này phải sửa thêm hai file đó. Các feature khác dùng kênh đầy đủ gián tiếp qua service `fdc.*`, không import nó.
+**Ngoại lệ đã biết — `full-devtools`:** đây là feature hạ tầng. `src/bridge/cli.ts` import trực tiếp `client.ts`, `broker.ts`, `launcher.ts` (vì nó cung cấp lệnh con `kyte-webmcp broker` và `kyte-webmcp chrome`), và `BridgeContext.fullCdp` có kiểu `FullCdpClient`. Bỏ feature này phải sửa thêm hai file đó. Các feature khác dùng kênh đầy đủ gián tiếp qua service `fdc.*`, không import nó.
 
 ### 2.2 Các phần của một feature
 
@@ -123,7 +123,7 @@ Danh sách feature hiện có:
 |---|---|---|
 | `core.cdp` | `cdp.ts` | Gắn `chrome.debugger` theo nhu cầu; bật Page/Runtime/Network; `Target.setAutoAttach` (flatten) để vào iframe khác origin và worker; phát sự kiện cho feature; danh sách domain extension bị chặn. |
 | `core.life` | `tab-life.ts` | Vòng đời tab: dialog JS, trạng thái tải (kể cả khôi phục bfcache), request đang bay, đợi tải/đợi mạng rảnh. Điều hướng do mình khởi động thì đợi đúng sự kiện load của tài liệu đó (theo `loaderId`), không nhầm với load muộn của trang cũ. |
-| `core.page` | `page-world.ts` | Chạy hàm trong isolated world `neo-webmcp` (hoặc main world khi cần), resolve node, binding `__neoEmit` cho luồng audio, dọn handle tạm sau mỗi lời gọi. |
+| `core.page` | `page-world.ts` | Chạy hàm trong isolated world `kyte-webmcp` (hoặc main world khi cần), resolve node, binding `__kyteEmit` cho luồng audio, dọn handle tạm sau mỗi lời gọi. |
 | `core.refs` | `refs.ts` | Ref ổn định kiểu `e12` ↔ (tab, phiên CDP, frame, backendNodeId). |
 | `geometry.ts`, `ax.ts`, `image.ts` | — | Tọa độ/hit-test (bỏ qua overlay của chính mình), cây accessibility qua mọi frame, xử lý ảnh trong service worker (scale, đánh nhãn Set-of-Mark, ghép lưới). |
 | `core.sessions` + `sessions.ts` | — | Mỗi MCP client = một `Session`: tab đích, nhóm tab màu riêng, lời gọi đang chạy, gọi service phía bridge, ghi/stream file qua bridge. |
@@ -142,7 +142,7 @@ Service worker MV3 có thể bị Chrome dừng. `index.ts` đánh thức nó b�
 | `cli.ts` | Điểm vào: chế độ bridge (mặc định), `chrome`, `broker`; tắt khi stdin đóng hoặc nhận SIGINT/SIGTERM. |
 | `mcp-server.ts` | `Server` cấp thấp của MCP SDK: `tools/list` (tool tĩnh + `site_*` động, có `listChanged`), kiểm tham số theo schema, `instructions`, prompts. |
 | `hub.ts` | WebSocket server chờ extension: lấy cổng trống đầu tiên trong dải, chỉ nhận origin của extension và Host loopback, gọi/hủy tool, phục vụ `svc`. |
-| `files.ts` | Thư mục output (mặc định `~/.neo-webmcp/output`), service `file.write/open/append/close`. |
+| `files.ts` | Thư mục output (mặc định `~/.kyte-webmcp/output`), service `file.write/open/append/close`. |
 | `types.ts`, `log.ts` | Kiểu `BridgeContext`/`BridgeFeature`, log ra stderr (stdout dành cho MCP). |
 
 ## 5. Giao thức bridge ↔ extension
@@ -189,16 +189,16 @@ flowchart TD
     D -->|Không| SP["Sinh broker tách rời, chờ tối đa 5 giây"]
     SP --> J
     C -->|Rồi| Q
-    J --> Q["Broker chọn endpoint: gợi ý của bridge đang hỏi (NEO_WEBMCP_CDP_ENDPOINT, NEO_WEBMCP_CHROME_USER_DATA_DIR) → cấu hình của chính broker → profile agent → profile mặc định"]
+    J --> Q["Broker chọn endpoint: gợi ý của bridge đang hỏi (KYTE_WEBMCP_CDP_ENDPOINT, KYTE_WEBMCP_CHROME_USER_DATA_DIR) → cấu hình của chính broker → profile agent → profile mặc định"]
     Q --> V{"Danh sách target có extension của mình?"}
     V -->|Không| X["Bỏ endpoint đó, thử endpoint kế"]
     V -->|Có| G["Attach targetId của tab, gửi lệnh, trả kết quả"]
     X --> Q
 ```
 
-- Profile agent (`neo-webmcp chrome`: `--user-data-dir` riêng + `--remote-debugging-port=0` + `--load-extension`) không bao giờ hỏi người dùng.
+- Profile agent (`kyte-webmcp chrome`: `--user-data-dir` riêng + `--remote-debugging-port=0` + `--load-extension`) không bao giờ hỏi người dùng.
 - Profile thường của người dùng: bật một lần ở `chrome://inspect/#remote-debugging`; Chrome hỏi đồng ý cho mỗi kết nối mới. Vì broker giữ một kết nối duy nhất cho mọi bridge và sống tới khi Chrome đóng, hộp thoại xuất hiện tối đa một lần mỗi lần mở Chrome. Code không bao giờ tự bấm hộp thoại này.
-- Broker: cổng 17820–17829, đường dẫn `/neo-webmcp-broker`, xác thực bằng bearer token ghi trong `broker.json` (thư mục `NEO_WEBMCP_STATE_DIR` hoặc `~/.neo-webmcp`); tự thoát khi Chrome đóng hoặc 60 giây không có bridge nào. Broker có thể do bridge khác sinh ra, nên mỗi yêu cầu `Broker.connect` mang theo gợi ý endpoint của bridge gửi; broker chưa nối được trình duyệt nào sẽ dò lại theo gợi ý đó.
+- Broker: cổng 17820–17829, đường dẫn `/kyte-webmcp-broker`, xác thực bằng bearer token ghi trong `broker.json` (thư mục `KYTE_WEBMCP_STATE_DIR` hoặc `~/.kyte-webmcp`); tự thoát khi Chrome đóng hoặc 60 giây không có bridge nào. Broker có thể do bridge khác sinh ra, nên mỗi yêu cầu `Broker.connect` mang theo gợi ý endpoint của bridge gửi; broker chưa nối được trình duyệt nào sẽ dò lại theo gợi ý đó.
 - Khi không có kênh đầy đủ, tool liên quan vẫn trả kết quả bằng đường extension (ví dụ `media_inspect` đọc thông tin player trong trang, `coverage` vẫn đo CSS) kèm hướng dẫn bật kênh.
 
 ## 7. Quy ước code
@@ -234,7 +234,7 @@ Manifest được chép kèm version lấy từ `package.json`; icon được v�
 | Unit (logic thuần: parser phụ đề, kiểm tham số, đặt tên tool, phân tích trace, tóm tắt heap…) | `tests/unit/` | `npm run test:unit` |
 | E2E (Chrome for Testing + extension thật + bridge thật qua MCP client) | `tests/e2e/*.test.ts` | `npm run test:e2e` |
 
-- `tests/helpers/harness.ts` khởi chạy Chrome với profile tạm, nạp `dist-test/extension`, mở MCP client nối `dist-test/bridge/cli.mjs` qua stdio (số cổng trong test là 1783x, harness dời sang 1793x). Biến môi trường dành cho test: `NEO_WEBMCP_OUTPUT_DIR`, `NEO_WEBMCP_STATE_DIR` (đưa mọi file vào `tests/.artifacts`), `NEO_WEBMCP_NO_DEFAULT_PROFILES=1` (broker không bao giờ chạm Chrome thật của người dùng), `NEO_TEST_CHROME` (đường dẫn Chrome khác).
+- `tests/helpers/harness.ts` khởi chạy Chrome với profile tạm, nạp `dist-test/extension`, mở MCP client nối `dist-test/bridge/cli.mjs` qua stdio (số cổng trong test là 1783x, harness dời sang 1793x). Biến môi trường dành cho test: `KYTE_WEBMCP_OUTPUT_DIR`, `KYTE_WEBMCP_STATE_DIR` (đưa mọi file vào `tests/.artifacts`), `KYTE_WEBMCP_NO_DEFAULT_PROFILES=1` (broker không bao giờ chạm Chrome thật của người dùng), `KYTE_TEST_CHROME` (đường dẫn Chrome khác).
 - `tests/helpers/server.ts` dựng hai origin (`localhost` và `127.0.0.1`) để thử iframe khác origin, có Range, WebSocket echo, API lỗi/chậm.
 - `tests/fixtures/site/` chứa trang mẫu: form, shadow DOM, iframe, dialog, kéo thả, video có phụ đề và giọng nói, video khác origin chặn tải trực tiếp, trang chỉ cho phát khi có cử chỉ người dùng, video mã hóa Clear Key (đen và đỏ), trang WebMCP, trang storage/perf.
 - Bộ `impact` đo ảnh hưởng lên trình duyệt: trang agent không đụng tới giữ y như khi không cài extension; phiên kết thúc thì dọn sạch (giả lập thiết bị, mock mạng, overlay, debugger) mà không đóng tab; hai phiên chạy song song không lẫn nhau; tự phục hồi khi service worker khởi động lại và khi bridge khởi động lại; tốn rất ít tài nguyên khi rảnh.

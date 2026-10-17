@@ -1,11 +1,11 @@
 {
-  "name": "neo-webmcp",
+  "name": "kyte-webmcp",
   "version": "0.1.0",
   "private": true,
-  "description": "MCP server delivered as a Chrome extension: native browser control, video understanding, full DevTools data and WebMCP bridging.",
+  "description": "MCP server delivered as a Chrome extension: native browser control, video understanding, full DevTools data and W3C WebMCP page tools.",
   "type": "module",
   "bin": {
-    "neo-webmcp": "dist/bridge/cli.mjs"
+    "kyte-webmcp": "dist/bridge/cli.mjs"
   },
   "engines": {
     "node": ">=22.18"

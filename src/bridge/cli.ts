@@ -14,14 +14,14 @@ import { defaultOutputDir, fileServices } from './files.ts';
 import { log } from './log.ts';
 import type { BridgeContext } from './types.ts';
 
-const HELP = `neo-webmcp ${pkg.version} — MCP server for the Neo WebMCP Chrome extension
+const HELP = `kyte-webmcp ${pkg.version} — MCP server for the Kyte WebMCP Chrome extension
 
 Usage:
-  neo-webmcp [--port <n>] [--output-dir <dir>]
+  kyte-webmcp [--port <n>] [--output-dir <dir>]
       Run the MCP bridge on stdio. MCP clients (Claude Code, Claude Desktop, Cursor…) start this.
-  neo-webmcp chrome [--chrome-path <exe>] [--profile-dir <dir>] [--url <url>]
+  kyte-webmcp chrome [--chrome-path <exe>] [--profile-dir <dir>] [--url <url>]
       Start Chrome with a dedicated agent profile: full DevTools access without consent prompts.
-  neo-webmcp broker
+  kyte-webmcp broker
       Internal: the shared full-DevTools connection (started automatically).
 `;
 
@@ -60,7 +60,7 @@ async function main(): Promise<void> {
   }
   if (command) throw new Error(`Unknown command "${command}"\n\n${HELP}`);
 
-  const outputDir = path.resolve(values['output-dir'] ?? process.env.NEO_WEBMCP_OUTPUT_DIR ?? defaultOutputDir());
+  const outputDir = path.resolve(values['output-dir'] ?? process.env.KYTE_WEBMCP_OUTPUT_DIR ?? defaultOutputDir());
   const ctx = { outputDir, version: pkg.version, fullCdp: new FullCdpClient(cliPath) } as BridgeContext;
   const services: Record<string, ServiceHandler> = { ...fileServices(outputDir) };
   for (const f of bridgeFeatures) Object.assign(services, f.services?.(ctx));

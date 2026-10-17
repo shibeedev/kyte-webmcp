@@ -186,15 +186,15 @@ export async function readTextTracks(this: HTMLMediaElement, lang: string | null
   return { label: pick.label, language: pick.language, kind: pick.kind, cues, available: tracks.map((t) => t.language || t.label || t.kind) };
 }
 
-/** Starts streaming the element's audio (16 kHz mono PCM) out of the page through __neoEmit. */
+/** Starts streaming the element's audio (16 kHz mono PCM) out of the page through __kyteEmit. */
 export async function startAudioCapture(this: HTMLMediaElement, captureId: string): Promise<{ ok: boolean; error?: string }> {
   const m = this as HTMLMediaElement & { captureStream?: () => MediaStream };
   if (typeof m.captureStream !== 'function') return { ok: false, error: 'captureStream is not supported on this element' };
   const stream = m.captureStream();
   const ctx = new AudioContext({ sampleRate: 16000 });
   await ctx.resume().catch(() => {});
-  const g = globalThis as unknown as { __neoEmit?: (s: string) => void; __neoCaptures?: Record<string, () => number> };
-  const emit = g.__neoEmit;
+  const g = globalThis as unknown as { __kyteEmit?: (s: string) => void; __kyteCaptures?: Record<string, () => number> };
+  const emit = g.__kyteEmit;
   if (!emit) return { ok: false, error: 'binding missing' };
   let source: MediaStreamAudioSourceNode | null = null;
   const proc = ctx.createScriptProcessor(4096, 1, 1);
@@ -230,23 +230,23 @@ export async function startAudioCapture(this: HTMLMediaElement, captureId: strin
   };
   attach();
   stream.addEventListener('addtrack', attach);
-  g.__neoCaptures = g.__neoCaptures ?? {};
-  g.__neoCaptures[captureId] = () => {
+  g.__kyteCaptures = g.__kyteCaptures ?? {};
+  g.__kyteCaptures[captureId] = () => {
     flush();
     stream.removeEventListener('addtrack', attach);
     proc.disconnect();
     source?.disconnect();
     void ctx.close();
     for (const t of stream.getTracks()) t.stop();
-    delete g.__neoCaptures![captureId];
+    delete g.__kyteCaptures![captureId];
     return source ? total / 16000 : -1;
   };
   return { ok: true };
 }
 
 export function stopAudioCapture(this: HTMLMediaElement, captureId: string): number {
-  const g = globalThis as unknown as { __neoCaptures?: Record<string, () => number> };
-  const stop = g.__neoCaptures?.[captureId];
+  const g = globalThis as unknown as { __kyteCaptures?: Record<string, () => number> };
+  const stop = g.__kyteCaptures?.[captureId];
   return stop ? stop() : -2;
 }
 

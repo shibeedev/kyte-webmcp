@@ -1,5 +1,5 @@
 /**
- * The "Neo MCP" DevTools panel: share the selected element or a network
+ * The "Kyte WebMCP" DevTools panel: share the selected element or a network
  * request with the agent (with a note), and watch what the agent does on
  * this tab. All page/agent data is rendered with textContent.
  */

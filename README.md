@@ -1,13 +1,13 @@
-# Neo WebMCP
+# Kyte WebMCP Extension
 
-**Your real Chrome as an MCP server, with WebMCP built in.**
+**Your real Chrome as an MCP server, with W3C WebMCP built in.**
 
-Neo WebMCP is an MCP server delivered as a Chrome extension. AI agents (Claude Code, Claude Desktop, Cursor, or any MCP client that speaks stdio) drive **the Chrome you already use**, with your logins and extensions: they operate pages like a person, watch and understand video, read everything DevTools sees, and, through **WebMCP**, call the tools that websites publish for agents.
+Kyte WebMCP is an MCP server delivered as a Chrome extension. AI agents (Claude Code, Claude Desktop, Cursor, or any MCP client that speaks stdio) drive **the Chrome you already use**, with your logins and extensions: they operate pages like a person, watch and understand video, read everything DevTools sees, and, through **W3C WebMCP**, call the tools that websites publish for agents.
 
 ```mermaid
 flowchart LR
     A["MCP client"] <-- stdio --> B["Bridge (Node)"]
-    B <-- "WebSocket 127.0.0.1" --> E["Neo WebMCP extension"]
+    B <-- "WebSocket 127.0.0.1" --> E["Kyte WebMCP extension"]
     E <-- "DevTools Protocol" --> T["Your tabs, iframes, workers"]
     E <-- "WebMCP" --> W["Tools the website publishes"]
 ```
@@ -16,7 +16,7 @@ flowchart LR
 
 [WebMCP](https://github.com/webmachinelearning/webmcp) is a proposed web standard (a draft report of the W3C Web Machine Learning Community Group) that lets a web page publish tools for AI agents, either from script with `document.modelContext.registerTool()` or declaratively with `<form toolname>`. Instead of guessing which buttons to click, the agent calls the site's own functions with typed input.
 
-Neo WebMCP turns those page tools into MCP tools:
+Kyte WebMCP turns those page tools into MCP tools:
 
 - **Auto-exposed to your agent.** Every WebMCP tool of the tab the agent is working on appears in the client's tool list as `site_<name>`, with the page's input schema. The page's read-only and consequential hints become the MCP `readOnlyHint` and `destructiveHint` annotations.
 - **Always current.** The tool list is refreshed (`notifications/tools/list_changed`) when the page adds or removes tools, when it navigates away, and when the agent switches to another tab.
@@ -45,7 +45,7 @@ A page that publishes two tools:
 </form>
 ```
 
-The agent then sees `site_add_todo` and `site_search_products` next to Neo WebMCP's own tools, and calls them like any other MCP tool.
+The agent then sees `site_add_todo` and `site_search_products` next to Kyte WebMCP's own tools, and calls them like any other MCP tool.
 
 **Enabling WebMCP:** it needs Chrome 149 or newer, either on a site enrolled in the WebMCP origin trial, or locally by turning on `chrome://flags/#enable-webmcp-testing` and restarting Chrome. When WebMCP is not available, `webmcp_list` explains how to enable it instead of returning an empty list.
 
@@ -54,11 +54,11 @@ The agent then sees `site_add_todo` and `site_search_products` next to Neo WebMC
 - **Native browser control.** Tabs, navigation, an accessibility tree with stable refs (`e12`), click, type, drag, upload and dialogs with trusted mouse and keyboard events, through shadow DOM and cross-origin iframes, also on background tabs. Screenshots with Set-of-Mark labels. Downloads, history, bookmarks, clipboard, PDF.
 - **Video understanding.** List videos, control playback, grab frames at any time (cross-origin videos included), build a storyboard grid, read captions (WebVTT, SRT, TTML, YouTube), and transcribe speech with Whisper **running on your machine** (audio never leaves it). `video_watch` returns a storyboard and the speech timeline in one call.
 - **All of DevTools.** Console, Network (details, bodies, WebSocket frames, HAR, mocking and blocking), Core Web Vitals, Performance traces with analysis, Coverage, Elements (box model, CSS rules, event listeners), Application (cookies, storage, IndexedDB, Cache Storage, service workers), Issues, Memory (heap snapshots), Media, device, network and CPU emulation, and `cdp_send` for any DevTools Protocol command.
-- **Two-way DevTools.** A "Neo MCP" panel inside DevTools: select an element or a request and send it to the agent with a note; the agent can reveal an element or a source line in your DevTools.
+- **Two-way DevTools.** A "Kyte WebMCP" panel inside DevTools: select an element or a request and send it to the agent with a note; the agent can reveal an element or a source line in your DevTools.
 - **Many agents at once.** Each MCP client is its own session with its own colored tab group; sessions never mix.
 - **You stay in control.** The agent works fully automatically, but a controlled tab shows a border and a **Stop** button, and the side panel offers Stop and Resume per session or for all, plus a live activity log.
 
-The extension UI follows Chrome's language: English or Vietnamese (English by default).
+The extension UI follows Chrome's language (English or Vietnamese, English by default) and the macOS System Settings look, in light and dark mode.
 
 ## Requirements
 
@@ -79,14 +79,14 @@ This produces the extension in `dist/extension/` and the bridge at `dist/bridge/
 
 **2. Load the extension into Chrome**
 
-Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and pick the `dist/extension` folder. Click the Neo WebMCP toolbar icon to open the side panel.
+Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and pick the `dist/extension` folder. Click the Kyte WebMCP toolbar icon to open the side panel.
 
 **3. Add it to your MCP client**
 
 Claude Code:
 
 ```bash
-claude mcp add neo-webmcp -- node "/path/to/neo-webmcp/dist/bridge/cli.mjs"
+claude mcp add kyte-webmcp -- node "/path/to/kyte-webmcp/dist/bridge/cli.mjs"
 ```
 
 Clients configured with JSON (Claude Desktop, Cursor…):
@@ -94,9 +94,9 @@ Clients configured with JSON (Claude Desktop, Cursor…):
 ```json
 {
   "mcpServers": {
-    "neo-webmcp": {
+    "kyte-webmcp": {
       "command": "node",
-      "args": ["/path/to/neo-webmcp/dist/bridge/cli.mjs"]
+      "args": ["/path/to/kyte-webmcp/dist/bridge/cli.mjs"]
     }
   }
 }
@@ -122,21 +122,21 @@ There are two ways to get it; pick one.
 node dist/bridge/cli.mjs chrome
 ```
 
-This starts Chrome with its own profile in `~/.neo-webmcp/chrome-profile` and remote debugging turned on. Logins made in this profile are kept for next time. Options: `--chrome-path <exe>`, `--profile-dir <folder>`, `--url <address>`.
+This starts Chrome with its own profile in `~/.kyte-webmcp/chrome-profile` and remote debugging turned on. Logins made in this profile are kept for next time. Options: `--chrome-path <exe>`, `--profile-dir <folder>`, `--url <address>`.
 
 Branded Google Chrome ignores loading extensions from the command line. In that case the command prints what to do: in the window that opened, go to `chrome://extensions`, click **Load unpacked** and pick `dist/extension`. This is needed **once** per profile.
 
 **Option B: your normal Chrome:**
 
-Open `chrome://inspect/#remote-debugging` and turn remote debugging on. The first time the agent needs the full channel, Chrome asks for permission; click **Allow**. Neo WebMCP keeps a single connection shared by all agents, so this prompt appears **at most once per Chrome start**. Neo WebMCP never clicks that prompt for you.
+Open `chrome://inspect/#remote-debugging` and turn remote debugging on. The first time the agent needs the full channel, Chrome asks for permission; click **Allow**. Kyte WebMCP keeps a single connection shared by all agents, so this prompt appears **at most once per Chrome start**. Kyte WebMCP never clicks that prompt for you.
 
 The connection is held by a small background process (the "broker") that starts when needed and exits when Chrome closes. `browser_status` shows the state of the channel.
 
 ## Video and Whisper
 
 - Captions are preferred when they exist (`<track>` elements, caption files downloaded by the player, YouTube). Otherwise speech is transcribed with Whisper running locally (Transformers.js, CPU).
-- Pick the model in the side panel: `tiny` (fastest), `base` (default) or `small` (most accurate). The first use downloads the model from Hugging Face into `~/.cache/neo-webmcp/models` (about 76 MB for `base`); later runs use the saved copy.
-- Audio source (`source`): the default `auto` tries, in order, decoding the media file directly when the video has a direct URL (cross-origin included); then capturing the playing element in real time (streams and MSE; you still hear it); then capturing the whole tab's audio if you allowed it by clicking the Neo WebMCP icon on that tab. If none works, the agent gets the reason for each attempt and how to grant access. The agent can also ask for `decode`, `stream` or `tab` directly. Silent segments are reported as silent instead of returning an empty transcript.
+- Pick the model in the side panel: `tiny` (fastest), `base` (default) or `small` (most accurate). The first use downloads the model from Hugging Face into `~/.cache/kyte-webmcp/models` (about 76 MB for `base`); later runs use the saved copy.
+- Audio source (`source`): the default `auto` tries, in order, decoding the media file directly when the video has a direct URL (cross-origin included); then capturing the playing element in real time (streams and MSE; you still hear it); then capturing the whole tab's audio if you allowed it by clicking the Kyte WebMCP icon on that tab. If none works, the agent gets the reason for each attempt and how to grant access. The agent can also ask for `decode`, `stream` or `tab` directly. Silent segments are reported as silent instead of returning an empty transcript.
 
 ## Prompts
 
@@ -167,7 +167,7 @@ Each description is the first sentence of what the agent receives.
 
 | Tool | Description |
 |---|---|
-| `browser_status` | Reports whether the Neo WebMCP Chrome extension is connected to this bridge, the extension and browser versions, the bridge port, and whether the full DevTools channel is available. |
+| `browser_status` | Reports whether the Kyte WebMCP Chrome extension is connected to this bridge, the extension and browser versions, the bridge port, and whether the full DevTools channel is available. |
 
 **Tabs and navigation**
 
@@ -253,7 +253,7 @@ Each description is the first sentence of what the agent receives.
 
 | Tool | Description |
 |---|---|
-| `devtools_context` | When the user has DevTools open on the tab: returns the element currently selected in the Elements panel (selector, HTML, ref) and the items the user sent to the agent from the "Neo MCP" DevTools panel (elements or network requests with notes). |
+| `devtools_context` | When the user has DevTools open on the tab: returns the element currently selected in the Elements panel (selector, HTML, ref) and the items the user sent to the agent from the "Kyte WebMCP" DevTools panel (elements or network requests with notes). |
 | `devtools_reveal` | Shows something to the user in their open DevTools: an element in the Elements panel (ref or selector), or a source file at a line in the Sources panel (url + line). |
 
 Every tool that acts on a tab accepts an optional `tabId`; by default it uses the session's target tab (the tab you are looking at, or the tab the agent opened or selected).
@@ -261,12 +261,12 @@ Every tool that acts on a tab accepts an optional `tabId`; by default it uses th
 ## Safety and privacy
 
 - The agent works **fully automatically**, on any tab, without asking before each action. Only connect MCP clients you trust.
-- A controlled tab shows a purple border and a "… is controlling this tab" label with a **Stop** button; the side panel has **Stop all** / **Resume all** and Stop / Resume per session. Stop cancels the running command and pauses the session (the border turns amber) until you click Resume. The border can be turned off in the side panel settings.
-- The bridge listens on 127.0.0.1 only and accepts connections from the Neo WebMCP extension only.
+- A controlled tab shows a blue border and a "… is controlling this tab" label with a **Stop** button; the side panel has **Stop all** / **Resume all** and Stop / Resume per session. Stop cancels the running command and pauses the session (the border turns orange) until you click Resume. The border can be turned off in the side panel settings.
+- The bridge listens on 127.0.0.1 only and accepts connections from the Kyte WebMCP extension only.
 - Audio for transcription is processed by Whisper on your machine and is not sent anywhere.
 - The activity log hides the values of arguments whose names contain password, secret, token, otp, pin, cvv or card. The log is kept for the Chrome session (not written to disk) and is cleared when Chrome closes.
 - Content that comes from web pages (WebMCP tool results included) is marked as untrusted, and the agent is told never to follow instructions found in it.
-- When a session ends, Neo WebMCP removes its debugger, emulation, network mocks and border from the tabs, without closing any tab.
+- When a session ends, Kyte WebMCP removes its debugger, emulation, network mocks and border from the tabs, without closing any tab.
 - `chrome://` pages and the Chrome Web Store are protected by Chrome; the extension cannot control them.
 
 ## Configuration
@@ -275,22 +275,22 @@ Bridge command line:
 
 | Command | Meaning |
 |---|---|
-| `neo-webmcp [--port <n>] [--output-dir <folder>]` | Runs the bridge on stdio (what MCP clients start) |
-| `neo-webmcp chrome [--chrome-path <exe>] [--profile-dir <folder>] [--url <address>]` | Starts Chrome with a dedicated agent profile (full DevTools channel, no prompts) |
-| `neo-webmcp --help` / `--version` | Help / version |
+| `kyte-webmcp [--port <n>] [--output-dir <folder>]` | Runs the bridge on stdio (what MCP clients start) |
+| `kyte-webmcp chrome [--chrome-path <exe>] [--profile-dir <folder>] [--url <address>]` | Starts Chrome with a dedicated agent profile (full DevTools channel, no prompts) |
+| `kyte-webmcp --help` / `--version` | Help / version |
 
-`neo-webmcp` above is the same as `node dist/bridge/cli.mjs`.
+`kyte-webmcp` above is the same as `node dist/bridge/cli.mjs`.
 
 Environment variables:
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `NEO_WEBMCP_OUTPUT_DIR` | `~/.neo-webmcp/output` | Where screenshots, PDFs, HAR files, traces and heap snapshots go when no path is given |
-| `NEO_WEBMCP_MODEL_DIR` | `~/.cache/neo-webmcp/models` | Where Whisper models are stored |
-| `NEO_WEBMCP_CDP_ENDPOINT` | — | A specific remote debugging endpoint (`ws://…`) for the full DevTools channel |
-| `NEO_WEBMCP_CHROME_USER_DATA_DIR` | — | A Chrome profile folder to look for a remote debugging endpoint in |
-| `NEO_WEBMCP_STATE_DIR` | `~/.neo-webmcp` | Where the broker writes its connection info |
-| `NEO_WEBMCP_NO_DEFAULT_PROFILES` | — | `1` = never look at normal Chrome profiles (used by the tests) |
+| `KYTE_WEBMCP_OUTPUT_DIR` | `~/.kyte-webmcp/output` | Where screenshots, PDFs, HAR files, traces and heap snapshots go when no path is given |
+| `KYTE_WEBMCP_MODEL_DIR` | `~/.cache/kyte-webmcp/models` | Where Whisper models are stored |
+| `KYTE_WEBMCP_CDP_ENDPOINT` | — | A specific remote debugging endpoint (`ws://…`) for the full DevTools channel |
+| `KYTE_WEBMCP_CHROME_USER_DATA_DIR` | — | A Chrome profile folder to look for a remote debugging endpoint in |
+| `KYTE_WEBMCP_STATE_DIR` | `~/.kyte-webmcp` | Where the broker writes its connection info |
+| `KYTE_WEBMCP_NO_DEFAULT_PROFILES` | — | `1` = never look at normal Chrome profiles (used by the tests) |
 
 ## Development and testing
 
@@ -302,13 +302,13 @@ npm run test:e2e     # build the test build into dist-test/, then run end-to-end
 npm test             # build + unit + e2e
 ```
 
-End-to-end tests use Chrome for Testing 155 with temporary profiles and never touch your Chrome, your Downloads folder or your clipboard. The test build (`dist-test/`) is identical to the real one except that its bridge uses ports 17931–17940, so even while your own Chrome runs Neo WebMCP and your MCP client is open, the tests and your real setup never connect to each other. Install the test browser once:
+End-to-end tests use Chrome for Testing 155 with temporary profiles and never touch your Chrome, your Downloads folder or your clipboard. The test build (`dist-test/`) is identical to the real one except that its bridge uses ports 17931–17940, so even while your own Chrome runs Kyte WebMCP and your MCP client is open, the tests and your real setup never connect to each other. Install the test browser once:
 
 ```bash
 npx @puppeteer/browsers install chrome@155.0.8059.41 --path .cache/chrome
 ```
 
-On macOS/Linux, or to test with another Chrome, set `NEO_TEST_CHROME` to the Chrome executable. The `devtools-panel` suite opens a visible Chrome window (extension DevTools panels do not run headless). Test files go to `tests/.artifacts/`.
+On macOS/Linux, or to test with another Chrome, set `KYTE_TEST_CHROME` to the Chrome executable. The `devtools-panel` suite opens a visible Chrome window (extension DevTools panels do not run headless). Test files go to `tests/.artifacts/`.
 
 Code structure and the rules for adding features: [architecture.md](architecture.md). Feature requirements: [brd.md](brd.md). Both are written in Vietnamese.
 
@@ -318,6 +318,6 @@ Code structure and the rules for adding features: [architecture.md](architecture
 - DRM-protected video: Chrome does not let anyone read encrypted frames directly, so frames are captured from what the page shows; if the player also protects what is shown (it renders black), the tool says the frame is blocked by DRM instead of returning a black image as a normal result.
 - Cross-origin video without CORS is captured from what the page shows rather than decoded, so the video element must be rendered.
 - Background target tab (you are looking at another tab): everything still works without bringing the tab to the front, but `hover` and mouse-driven drags are slower (about 5 seconds per mouse move, because Chrome delivers mouse moves to hidden tabs only after a delay), and scrolling by an amount is done with script because Chrome ignores the mouse wheel in hidden tabs.
-- Capturing a whole tab's audio needs you to click the Neo WebMCP icon on that tab first (a Chrome rule). The tests stand in for that click with Chromium's `--allowlisted-extension-id` switch.
+- Capturing a whole tab's audio needs you to click the Kyte WebMCP icon on that tab first (a Chrome rule). The tests stand in for that click with Chromium's `--allowlisted-extension-id` switch.
 - Tabs you opened before the agent touched them: requests and console messages from their earlier load are not available (like opening DevTools after a page has loaded); the tools remind the agent to reload when needed. Tabs the agent opens with `tab_open` are recorded from the start.
 - WebMCP is still an experimental Chrome feature and needs a flag (or a site in the origin trial).

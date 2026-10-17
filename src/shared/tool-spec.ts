@@ -64,7 +64,7 @@ export const arr = (items: JsonSchema, description: string, extra: Partial<JsonS
 export const tabIdParam: JsonSchema = int('Tab to act on. Defaults to the session target tab (see tab_select).');
 export const timeoutParam: JsonSchema = int('Maximum time to wait, in milliseconds.');
 export const refParam: JsonSchema = str('Element ref from page_snapshot or find, e.g. "e12".');
-export const savePathParam: JsonSchema = str('Absolute file path to save to. Defaults to a file in the neo-webmcp output folder.');
+export const savePathParam: JsonSchema = str('Absolute file path to save to. Defaults to a file in the kyte-webmcp output folder.');
 
 export function defineTools(...specs: ToolSpec[]): ToolSpec[] {
   return specs;

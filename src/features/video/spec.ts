@@ -82,7 +82,7 @@ export const videoTools = defineTools(
     name: 'video_transcribe',
     title: 'Transcribe audio (local Whisper)',
     description:
-      'Transcribes the speech of a video segment with Whisper running locally on this machine (audio never leaves it). Picks the audio source automatically: decodes the media file directly when it has a URL, otherwise records the segment in real time while it plays (you still hear it), and as a last resort records the audio of the whole tab if the user allowed it by clicking the Neo WebMCP icon on that tab. The first run downloads the model. Returns timestamped text in video time.',
+      'Transcribes the speech of a video segment with Whisper running locally on this machine (audio never leaves it). Picks the audio source automatically: decodes the media file directly when it has a URL, otherwise records the segment in real time while it plays (you still hear it), and as a last resort records the audio of the whole tab if the user allowed it by clicking the Kyte WebMCP icon on that tab. The first run downloads the model. Returns timestamped text in video time.',
     inputSchema: obj({
       video: videoParam,
       start: num('Segment start in seconds (default: current position).'),

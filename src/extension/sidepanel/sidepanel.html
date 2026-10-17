@@ -3,22 +3,21 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Neo WebMCP</title>
+    <title>Kyte WebMCP</title>
     <link rel="stylesheet" href="sidepanel.css" />
   </head>
   <body class="loading">
-    <header class="top">
+    <header class="toolbar">
       <div class="brand">
         <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
           <defs>
-            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c3aed" /><stop offset="1" stop-color="#06b6d4" /></linearGradient>
+            <linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5ac8fa" /><stop offset="1" stop-color="#0062f5" /></linearGradient>
           </defs>
-          <rect width="32" height="32" rx="7" fill="url(#g)" />
-          <path d="M10.5 22V10l11 12V10" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
-          <circle cx="21.5" cy="10" r="2.4" fill="#fff" />
+          <rect x="0.5" y="0.5" width="31" height="31" rx="7.5" fill="url(#g)" />
+          <path d="M11.4 8.6v14.8M21.3 8.6l-8.6 8M15 14.6l6.6 8.8" fill="none" stroke="#fff" stroke-width="2.9" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
-        <div>
-          <h1>Neo WebMCP</h1>
+        <div class="titles">
+          <h1>Kyte WebMCP</h1>
           <p id="status" class="status" role="status"><span class="dot"></span><span id="status-text"></span></p>
         </div>
       </div>
@@ -26,52 +25,67 @@
     </header>
 
     <main>
-      <section class="card" aria-labelledby="h-sessions">
-        <h2 id="h-sessions" data-i18n="sectionSessions"></h2>
-        <ul id="sessions" class="sessions"></ul>
-        <p id="no-sessions" class="empty" data-i18n="noSessions"></p>
-      </section>
-
-      <section class="card grow" aria-labelledby="h-activity">
-        <div class="section-head">
-          <h2 id="h-activity" data-i18n="sectionActivity"></h2>
-          <input id="filter" class="filter" type="search" data-i18n-placeholder="filterPlaceholder" />
+      <section class="section" aria-labelledby="h-sessions">
+        <h2 id="h-sessions" class="section-title" data-i18n="sectionSessions"></h2>
+        <div class="group">
+          <ul id="sessions" class="rows sessions"></ul>
+          <p id="no-sessions" class="empty" data-i18n="noSessions"></p>
         </div>
-        <ol id="activity" class="activity"></ol>
-        <p id="no-activity" class="empty" data-i18n="noActivity"></p>
       </section>
 
-      <section class="card" aria-labelledby="h-webmcp">
-        <h2 id="h-webmcp" data-i18n="sectionWebmcp"></h2>
-        <ul id="webmcp" class="tools"></ul>
-        <p id="no-webmcp" class="empty" data-i18n="noWebmcp"></p>
+      <section class="section grow" aria-labelledby="h-activity">
+        <div class="section-head">
+          <h2 id="h-activity" class="section-title" data-i18n="sectionActivity"></h2>
+          <label class="search">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.8" cy="6.8" r="4.6" /><path d="m10.3 10.3 3.6 3.6" /></svg>
+            <input id="filter" type="search" data-i18n-placeholder="filterPlaceholder" />
+          </label>
+        </div>
+        <div class="group scroll">
+          <ol id="activity" class="rows activity"></ol>
+          <p id="no-activity" class="empty" data-i18n="noActivity"></p>
+        </div>
       </section>
 
-      <section class="card" aria-labelledby="h-settings">
-        <h2 id="h-settings" data-i18n="sectionSettings"></h2>
-        <label class="row switch">
-          <span data-i18n="settingOverlay"></span>
-          <input id="set-overlay" type="checkbox" role="switch" />
-        </label>
-        <label class="row">
-          <span data-i18n="settingWhisper"></span>
-          <select id="set-whisper">
-            <option value="tiny" data-i18n="whisperTiny"></option>
-            <option value="base" data-i18n="whisperBase"></option>
-            <option value="small" data-i18n="whisperSmall"></option>
-          </select>
-        </label>
+      <section class="section" aria-labelledby="h-webmcp">
+        <h2 id="h-webmcp" class="section-title" data-i18n="sectionWebmcp"></h2>
+        <div class="group">
+          <ul id="webmcp" class="rows tools"></ul>
+          <p id="no-webmcp" class="empty" data-i18n="noWebmcp"></p>
+        </div>
       </section>
 
-      <details id="setup" class="card setup">
-        <summary><h2 data-i18n="sectionSetup"></h2></summary>
-        <p class="muted" data-i18n="setupIntro"></p>
-        <h3 data-i18n="setupClaudeCode"></h3>
-        <div class="code"><code id="cmd-claude"></code><button class="btn small" type="button" data-copy="cmd-claude" data-i18n="copy"></button></div>
-        <h3 data-i18n="setupJson"></h3>
-        <div class="code"><pre id="cmd-json"></pre><button class="btn small" type="button" data-copy="cmd-json" data-i18n="copy"></button></div>
-        <p id="ports" class="muted small"></p>
-        <p id="version" class="muted small"></p>
+      <section class="section" aria-labelledby="h-settings">
+        <h2 id="h-settings" class="section-title" data-i18n="sectionSettings"></h2>
+        <div class="group">
+          <label class="row switch">
+            <span data-i18n="settingOverlay"></span>
+            <input id="set-overlay" type="checkbox" role="switch" />
+          </label>
+          <label class="row">
+            <span data-i18n="settingWhisper"></span>
+            <span class="popup">
+              <select id="set-whisper">
+                <option value="tiny" data-i18n="whisperTiny"></option>
+                <option value="base" data-i18n="whisperBase"></option>
+                <option value="small" data-i18n="whisperSmall"></option>
+              </select>
+            </span>
+          </label>
+        </div>
+      </section>
+
+      <details id="setup" class="group setup">
+        <summary><h2 data-i18n="sectionSetup"></h2><span class="chevron" aria-hidden="true"></span></summary>
+        <div class="setup-body">
+          <p class="muted" data-i18n="setupIntro"></p>
+          <h3 data-i18n="setupClaudeCode"></h3>
+          <div class="code"><code id="cmd-claude"></code><button class="btn small" type="button" data-copy="cmd-claude" data-i18n="copy"></button></div>
+          <h3 data-i18n="setupJson"></h3>
+          <div class="code"><pre id="cmd-json"></pre><button class="btn small" type="button" data-copy="cmd-json" data-i18n="copy"></button></div>
+          <p id="ports" class="muted small"></p>
+          <p id="version" class="muted small"></p>
+        </div>
       </details>
     </main>
     <script type="module" src="sidepanel.js"></script>

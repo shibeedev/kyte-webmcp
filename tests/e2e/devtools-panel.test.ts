@@ -1,4 +1,4 @@
-/** Two-way DevTools: real DevTools window (headful), reveal element/source, read the user's selection, the "Neo MCP" panel inbox. */
+/** Two-way DevTools: real DevTools window (headful), reveal element/source, read the user's selection, the "Kyte WebMCP" panel inbox. */
 import { after, before, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
@@ -27,7 +27,7 @@ async function panelFrame(): Promise<Frame> {
     if (frame) return frame;
     await sleep(250);
   }
-  throw new Error('Neo MCP panel frame not found');
+  throw new Error('Kyte WebMCP panel frame not found');
 }
 
 describe('two-way DevTools', () => {
@@ -57,7 +57,7 @@ describe('two-way DevTools', () => {
     const ctx = await waitContext(/<input#email> selector #email/);
     assert.match(ctx, /Selected in the Elements panel → \[ref=e\d+\]/);
     const snap = await ok(mcp.client, 'page_snapshot', { interactiveOnly: true });
-    const heading = await ok(mcp.client, 'find', { text: 'Neo Test Shop' });
+    const heading = await ok(mcp.client, 'find', { text: 'Kyte Test Shop' });
     void snap;
     await ok(mcp.client, 'devtools_reveal', { ref: heading.text.match(/\[ref=(e\d+)\]/)![1]! });
     await waitContext(/<h1> selector/);
@@ -68,7 +68,7 @@ describe('two-way DevTools', () => {
     assert.match(r.text, /Opened .*index\.html:40 in the user's DevTools Sources panel/);
   });
 
-  it('lets the user share the selected element and a request from the Neo MCP panel', async () => {
+  it('lets the user share the selected element and a request from the Kyte WebMCP panel', async () => {
     await ok(mcp.client, 'devtools_reveal', { selector: '#fetchBtn' });
     await waitContext(/<button#fetchBtn>/);
     // Dock DevTools at the bottom (Ctrl+Shift+D) so the tab strip is wide enough to show the extension's tab, then click it.
@@ -79,14 +79,14 @@ describe('two-way DevTools', () => {
     await devtools.keyboard.up('Shift');
     await devtools.keyboard.up('Control');
     await sleep(1200);
-    const tab = await devtools.waitForSelector('::-p-aria([name="Neo MCP"][role="tab"])', { timeout: 10_000 });
+    const tab = await devtools.waitForSelector('::-p-aria([name="Kyte WebMCP"][role="tab"])', { timeout: 10_000 });
     await tab!.click();
     const frame = await panelFrame();
     await frame.waitForFunction(() => document.getElementById('selection')?.textContent?.includes('fetchBtn'), { timeout: 10_000 });
     await frame.type('#note', 'Why does this call fail?');
     await frame.click('#send-element');
     const shared = await waitContext(/element #fetchBtn.*note: "Why does this call fail\?"/);
-    assert.match(shared, /Shared by the user from the Neo MCP DevTools panel \(1\)/);
+    assert.match(shared, /Shared by the user from the Kyte WebMCP DevTools panel \(1\)/);
     // A request made while DevTools is open shows up in the panel and can be shared too.
     const snap = await ok(mcp.client, 'page_snapshot', { interactiveOnly: true });
     await ok(mcp.client, 'click', { ref: snap.text.match(/button "Call API" \[ref=(e\d+)\]/)![1]! });

@@ -1,6 +1,6 @@
 /**
  * DevTools page: runs whenever the user opens DevTools on a tab. It creates
- * the "Neo MCP" panel, mirrors the Elements-panel selection to the agent and
+ * the "Kyte WebMCP" panel, mirrors the Elements-panel selection to the agent and
  * performs reveal requests (element in Elements, file:line in Sources).
  */
 export {};
@@ -8,7 +8,7 @@ export {};
 const tabId = chrome.devtools.inspectedWindow.tabId;
 const port = chrome.runtime.connect({ name: `devtools-page:${tabId}` });
 
-chrome.devtools.panels.create('Neo MCP', 'icons/icon32.png', 'panel.html');
+chrome.devtools.panels.create('Kyte WebMCP', 'icons/icon32.png', 'panel.html');
 
 /** Evaluated in the inspected page: describes $0 with a unique CSS path. */
 const DESCRIBE_SELECTION = `(() => {

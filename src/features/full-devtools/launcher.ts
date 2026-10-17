@@ -1,5 +1,5 @@
 /**
- * `neo-webmcp chrome`: starts the installed Chrome with a dedicated profile
+ * `kyte-webmcp chrome`: starts the installed Chrome with a dedicated profile
  * folder and remote debugging on. Chrome only refuses remote debugging for
  * the *default* profile, so this profile gives the full DevTools channel
  * without any consent prompt. Logins made in it persist.
@@ -69,7 +69,7 @@ export async function launchAgentChrome(options: { chromePath?: string; profileD
   process.stderr.write(`Agent Chrome is running with profile ${profile}\nFull DevTools endpoint: ${wsUrl}\n`);
   await new Promise((r) => setTimeout(r, 1500));
   if (await extensionLoaded(wsUrl).catch(() => false)) {
-    process.stderr.write('The Neo WebMCP extension is loaded in this profile. Full DevTools access needs no prompts.\n');
+    process.stderr.write('The Kyte WebMCP extension is loaded in this profile. Full DevTools access needs no prompts.\n');
   } else {
     process.stderr.write(
       `One-time step: in the window that opened, go to chrome://extensions, turn on "Developer mode", click "Load unpacked" and choose:\n  ${options.extensionDir}\nChrome remembers it for this profile.\n`,

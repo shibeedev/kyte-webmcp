@@ -56,9 +56,9 @@ export class Core {
       feature.setup?.(this);
       if (feature.handlers) this.dispatcher.register(feature.handlers);
     }
-    chrome.runtime.onMessage.addListener((msg: { neo?: string; sessionId?: string }) => {
-      if (msg?.neo === 'overlay-stop' && msg.sessionId) this.setPaused(msg.sessionId, true);
-      if (msg?.neo === 'overlay-resume' && msg.sessionId) this.setPaused(msg.sessionId, false);
+    chrome.runtime.onMessage.addListener((msg: { kyte?: string; sessionId?: string }) => {
+      if (msg?.kyte === 'overlay-stop' && msg.sessionId) this.setPaused(msg.sessionId, true);
+      if (msg?.kyte === 'overlay-resume' && msg.sessionId) this.setPaused(msg.sessionId, false);
     });
     chrome.tabs.onRemoved.addListener((tabId) => {
       for (const s of this.sessions.values()) {
@@ -93,7 +93,7 @@ export class Core {
       try {
         await hook(session);
       } catch (error) {
-        console.warn('[neo-webmcp] session cleanup failed', errorMessage(error));
+        console.warn('[kyte-webmcp] session cleanup failed', errorMessage(error));
       }
     }
     // Detach from tabs no other session uses (BRD 2.2.1: nothing stays attached for an ended session).

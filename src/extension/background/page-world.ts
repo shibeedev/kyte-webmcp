@@ -19,7 +19,7 @@ export interface EvalOptions {
 }
 
 /** Object group for handles created during one tool call; released afterwards. */
-export const TEMP_GROUP = 'neo-webmcp-call';
+export const TEMP_GROUP = 'kyte-webmcp-call';
 
 interface ExceptionDetails {
   text: string;
@@ -208,14 +208,14 @@ export class PageWorld {
   readonly #bindings = new Set<string>();
 
   /**
-   * Exposes `globalThis.__neoEmit(string)` inside the isolated world of a
+   * Exposes `globalThis.__kyteEmit(string)` inside the isolated world of a
    * session; calls arrive as Runtime.bindingCalled events (used to stream data
    * such as captured audio out of the page).
    */
   async ensureBinding(tabId: number, sessionId?: string): Promise<void> {
     const key = `${tabId}|${sessionId ?? ''}`;
     if (this.#bindings.has(key)) return;
-    await this.#cdp.send(tabId, 'Runtime.addBinding', { name: '__neoEmit', executionContextName: ISOLATED_WORLD }, sessionId);
+    await this.#cdp.send(tabId, 'Runtime.addBinding', { name: '__kyteEmit', executionContextName: ISOLATED_WORLD }, sessionId);
     this.#bindings.add(key);
   }
 

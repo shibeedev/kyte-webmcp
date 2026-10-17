@@ -75,4 +75,4 @@ for (const file of ['sidepanel/sidepanel.html', 'sidepanel/sidepanel.css', 'devt
 for (const size of [16, 32, 48, 128]) await writeFile(path.join(extOut, 'icons', `icon${size}.png`), renderIcon(size));
 
 const rel = path.relative(root, outDir);
-console.log(`built neo-webmcp ${pkg.version}${testBuild ? ' (test ports)' : ''}: ${rel}/extension (load unpacked) + ${rel}/bridge/cli.mjs`);
+console.log(`built kyte-webmcp ${pkg.version}${testBuild ? ' (test ports)' : ''}: ${rel}/extension (load unpacked) + ${rel}/bridge/cli.mjs`);

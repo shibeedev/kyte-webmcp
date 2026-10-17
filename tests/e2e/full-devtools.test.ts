@@ -1,5 +1,5 @@
 /**
- * Full DevTools channel: Chrome runs with a non-default profile and remote debugging (like `neo-webmcp chrome`),
+ * Full DevTools channel: Chrome runs with a non-default profile and remote debugging (like `kyte-webmcp chrome`),
  * so the shared broker connects without any prompt and unlocks domains extensions cannot use.
  */
 import { after, before, describe, it } from 'node:test';
@@ -21,7 +21,7 @@ describe('full devtools channel', () => {
   before(async () => {
     srv = await startFixtureServers();
     bh = await launchBrowser({ args: ['--remote-debugging-port=0'] });
-    mcp = await startClient(17835, { env: { NEO_WEBMCP_CHROME_USER_DATA_DIR: bh.userDataDir } });
+    mcp = await startClient(17835, { env: { KYTE_WEBMCP_CHROME_USER_DATA_DIR: bh.userDataDir } });
     await waitConnected(mcp.client);
     await ok(mcp.client, 'tab_open', { url: `${srv.a}/perf.html` });
   });
@@ -50,7 +50,7 @@ describe('full devtools channel', () => {
     assert.match((await ok(mcp.client, 'browser_status')).text, /Full DevTools channel: idle — connects automatically/);
     const counters = await ok(mcp.client, 'cdp_send', { method: 'Memory.getDOMCounters' });
     assert.match(counters.text, /\(via full DevTools channel\)[\s\S]*"jsEventListeners"/);
-    assert.match((await ok(mcp.client, 'browser_status')).text, /Full DevTools channel: connected via .*neo-webmcp-test-/);
+    assert.match((await ok(mcp.client, 'browser_status')).text, /Full DevTools channel: connected via .*kyte-webmcp-test-/);
     assert.equal((JSON.parse(readFileSync(brokerFile, 'utf8')) as { pid: number }).pid, reused.pid, "the running broker was reused with this bridge's endpoint settings");
   });
 
@@ -84,7 +84,7 @@ describe('full devtools channel', () => {
 
   it('shares one browser connection between bridges', async () => {
     const before = JSON.parse(readFileSync(brokerFile, 'utf8')) as { pid: number };
-    mcp2 = await startClient(17834, { env: { NEO_WEBMCP_CHROME_USER_DATA_DIR: bh.userDataDir }, name: 'second-client' });
+    mcp2 = await startClient(17834, { env: { KYTE_WEBMCP_CHROME_USER_DATA_DIR: bh.userDataDir }, name: 'second-client' });
     await waitConnected(mcp2.client);
     const r = await ok(mcp2.client, 'cdp_send', { method: 'Memory.getDOMCounters' });
     assert.match(r.text, /via full DevTools channel/);
@@ -94,16 +94,16 @@ describe('full devtools channel', () => {
 
   it('accepts only authenticated bridges on this machine', async () => {
     const info = JSON.parse(readFileSync(brokerFile, 'utf8')) as { port: number; token: string };
-    const url = `ws://127.0.0.1:${info.port}/neo-webmcp-broker`;
+    const url = `ws://127.0.0.1:${info.port}/kyte-webmcp-broker`;
     assert.match(await wsAttempt(url), /^refused 401/, 'no token');
     assert.match(await wsAttempt(url, { Authorization: 'Bearer wrong' }), /^refused 401/, 'wrong token');
     assert.equal(await wsAttempt(url, { Authorization: `Bearer ${info.token}` }), 'open', 'the right token is accepted');
     const lan = lanAddress();
-    if (lan) assert.match(await wsAttempt(`ws://${lan}:${info.port}/neo-webmcp-broker`, { Authorization: `Bearer ${info.token}` }), /^refused ECONNREFUSED/, 'not reachable from the network');
+    if (lan) assert.match(await wsAttempt(`ws://${lan}:${info.port}/kyte-webmcp-broker`, { Authorization: `Bearer ${info.token}` }), /^refused ECONNREFUSED/, 'not reachable from the network');
   });
 });
 
-describe('neo-webmcp chrome (dedicated agent profile)', () => {
+describe('kyte-webmcp chrome (dedicated agent profile)', () => {
   const profile = path.join(ARTIFACTS, 'agent-profile');
   let client: McpHandle | undefined;
 
@@ -122,8 +122,8 @@ describe('neo-webmcp chrome (dedicated agent profile)', () => {
     const run = spawnSync(process.execPath, [CLI, 'chrome', '--chrome-path', CHROME, '--profile-dir', profile, '--url', 'about:blank'], { encoding: 'utf8', timeout: 60_000 });
     assert.equal(run.status, 0, run.stderr);
     assert.match(run.stderr, /Agent Chrome is running with profile .*agent-profile/);
-    assert.match(run.stderr, /The Neo WebMCP extension is loaded in this profile/);
-    client = await startClient(17832, { env: { NEO_WEBMCP_CHROME_USER_DATA_DIR: profile }, name: 'agent-profile-client' });
+    assert.match(run.stderr, /The Kyte WebMCP extension is loaded in this profile/);
+    client = await startClient(17832, { env: { KYTE_WEBMCP_CHROME_USER_DATA_DIR: profile }, name: 'agent-profile-client' });
     await waitConnected(client.client, 30_000);
     const r = await ok(client.client, 'cdp_send', { method: 'Memory.getDOMCounters' });
     assert.match(r.text, /via full DevTools channel/);

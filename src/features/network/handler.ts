@@ -268,7 +268,7 @@ export const networkFeature: Feature = {
       const har = {
         log: {
           version: '1.2',
-          creator: { name: 'Neo WebMCP', version: chrome.runtime.getManifest().version },
+          creator: { name: 'Kyte WebMCP', version: chrome.runtime.getManifest().version },
           pages: [{ startedDateTime: entries[0]?.startedDateTime ?? new Date().toISOString(), id: 'page_1', title: tab.title ?? tab.url ?? '', pageTimings: {} }],
           entries,
         },

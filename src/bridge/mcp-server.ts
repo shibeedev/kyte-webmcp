@@ -10,7 +10,7 @@ import type { BridgeContext, BridgeFeature, BridgeToolHandler, PromptDef } from 
 /** How long a tool call waits for the extension to (re)connect: longer than the extension's 30 s wake-up alarm. */
 const CONNECT_WAIT_MS = 40_000;
 
-const INSTRUCTIONS = `Neo WebMCP controls the user's real Chrome through an extension.
+const INSTRUCTIONS = `Kyte WebMCP controls the user's real Chrome through an extension.
 - Understand a page with page_snapshot (accessibility tree with refs like e12), then act with click/type/fill_form/select_option using those refs. Use screenshot (annotate=true labels refs on the image) when visuals matter, page_read for article text.
 - Tools act on the session target tab: by default the tab the user is looking at; tab_open/tab_select change it; every tool also accepts tabId.
 - Videos: video_watch gives a storyboard plus the speech timeline in one call; video_frame, video_storyboard, video_captions and video_transcribe (local Whisper) go deeper.
@@ -49,7 +49,7 @@ export function createMcpServer(ctx: BridgeContext, specs: ToolSpec[], features:
   let pageTools = new Map<string, PageTool>();
 
   const server = new Server(
-    { name: 'neo-webmcp', title: 'Neo WebMCP', version: ctx.version },
+    { name: 'kyte-webmcp', title: 'Kyte WebMCP', version: ctx.version },
     { capabilities: { tools: { listChanged: true }, prompts: {} }, instructions: INSTRUCTIONS },
   );
 

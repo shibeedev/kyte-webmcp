@@ -207,7 +207,7 @@ describe('video understanding', () => {
     assert.ok(r.isError, r.text);
     assert.match(r.text, /decoded media file failed: .*HTTP 403/);
     assert.match(r.text, /real-time capture while playing failed: .*cross-origin without CORS/);
-    assert.match(r.text, /tab audio capture failed: Tab audio capture is not permitted .*click the Neo WebMCP toolbar icon/);
+    assert.match(r.text, /tab audio capture failed: Tab audio capture is not permitted .*click the Kyte WebMCP toolbar icon/);
   });
 });
 

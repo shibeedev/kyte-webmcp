@@ -113,7 +113,7 @@ export class Cdp {
       try {
         await hook(tabId, sessionId, type);
       } catch (error) {
-        console.warn('[neo-webmcp] attach hook failed', errorMessage(error));
+        console.warn('[kyte-webmcp] attach hook failed', errorMessage(error));
       }
     }
   }
@@ -166,7 +166,7 @@ export class Cdp {
       try {
         l(tabId, source.sessionId, method, params);
       } catch (error) {
-        console.warn('[neo-webmcp] CDP listener failed', method, errorMessage(error));
+        console.warn('[kyte-webmcp] CDP listener failed', method, errorMessage(error));
       }
     }
   }

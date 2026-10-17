@@ -5,7 +5,7 @@ export const devtoolsPanelTools = defineTools(
     name: 'devtools_context',
     title: 'What the user selected in DevTools',
     description:
-      'When the user has DevTools open on the tab: returns the element currently selected in the Elements panel (selector, HTML, ref) and the items the user sent to the agent from the "Neo MCP" DevTools panel (elements or network requests with notes).',
+      'When the user has DevTools open on the tab: returns the element currently selected in the Elements panel (selector, HTML, ref) and the items the user sent to the agent from the "Kyte WebMCP" DevTools panel (elements or network requests with notes).',
     inputSchema: obj({ clearInbox: bool('Remove the returned inbox items.'), tabId: tabIdParam }),
     annotations: { readOnlyHint: true, openWorldHint: false },
   },

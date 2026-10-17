@@ -2,9 +2,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-/** Folder of the dedicated agent profile started by `neo-webmcp chrome` (non-default user data dir → no consent prompt). */
+/** Folder of the dedicated agent profile started by `kyte-webmcp chrome` (non-default user data dir → no consent prompt). */
 export function agentProfileDir(): string {
-  return path.join(os.homedir(), '.neo-webmcp', 'chrome-profile');
+  return path.join(os.homedir(), '.kyte-webmcp', 'chrome-profile');
 }
 
 /** Default user data directories of Chrome-family browsers, most likely first. */
@@ -38,7 +38,7 @@ export function readActivePort(userDataDir: string): string | null {
   return `ws://127.0.0.1:${port}${browserPath}`;
 }
 
-/** Where a bridge was told to look (its NEO_WEBMCP_CDP_ENDPOINT / NEO_WEBMCP_CHROME_USER_DATA_DIR). */
+/** Where a bridge was told to look (its KYTE_WEBMCP_CDP_ENDPOINT / KYTE_WEBMCP_CHROME_USER_DATA_DIR). */
 export interface EndpointHints {
   endpoint?: string;
   userDataDir?: string;
@@ -52,15 +52,15 @@ export interface EndpointHints {
  */
 export function discoverEndpoints(hints: EndpointHints = {}): Endpoint[] {
   const out: Endpoint[] = [];
-  for (const explicit of new Set([hints.endpoint, process.env.NEO_WEBMCP_CDP_ENDPOINT])) {
-    if (explicit) out.push({ wsUrl: explicit, source: 'NEO_WEBMCP_CDP_ENDPOINT', silent: true });
+  for (const explicit of new Set([hints.endpoint, process.env.KYTE_WEBMCP_CDP_ENDPOINT])) {
+    if (explicit) out.push({ wsUrl: explicit, source: 'KYTE_WEBMCP_CDP_ENDPOINT', silent: true });
   }
-  for (const userDir of new Set([hints.userDataDir, process.env.NEO_WEBMCP_CHROME_USER_DATA_DIR])) {
+  for (const userDir of new Set([hints.userDataDir, process.env.KYTE_WEBMCP_CHROME_USER_DATA_DIR])) {
     const ws = userDir ? readActivePort(userDir) : null;
     if (ws) out.push({ wsUrl: ws, source: userDir!, silent: true });
   }
   // Test runs must never reach (or prompt in) the user's own browsers: explicit endpoints only.
-  if (process.env.NEO_WEBMCP_NO_DEFAULT_PROFILES === '1') return out;
+  if (process.env.KYTE_WEBMCP_NO_DEFAULT_PROFILES === '1') return out;
   const agent = readActivePort(agentProfileDir());
   if (agent) out.push({ wsUrl: agent, source: 'agent profile', silent: true });
   for (const dir of defaultUserDataDirs()) {

@@ -15,10 +15,10 @@ import { discoverEndpoints, type Endpoint, type EndpointHints } from './discover
 
 export const BROKER_PORT_BASE = 17820;
 export const BROKER_PORT_COUNT = 10;
-export const BROKER_PATH = '/neo-webmcp-broker';
+export const BROKER_PATH = '/kyte-webmcp-broker';
 
 export function brokerInfoFile(): string {
-  return path.join(process.env.NEO_WEBMCP_STATE_DIR ?? path.join(os.homedir(), '.neo-webmcp'), 'broker.json');
+  return path.join(process.env.KYTE_WEBMCP_STATE_DIR ?? path.join(os.homedir(), '.kyte-webmcp'), 'broker.json');
 }
 
 export interface BrokerInfo {
@@ -47,7 +47,7 @@ interface CdpMessage {
 }
 
 function blog(...parts: unknown[]): void {
-  process.stderr.write(`[neo-webmcp broker] ${parts.map(String).join(' ')}\n`);
+  process.stderr.write(`[kyte-webmcp broker] ${parts.map(String).join(' ')}\n`);
 }
 
 export async function runBroker(): Promise<void> {
@@ -121,7 +121,7 @@ export async function runBroker(): Promise<void> {
     });
     if (!targets.some((t) => t.url.startsWith(`chrome-extension://${EXTENSION_ID}/`))) {
       ws.close();
-      throw new Error('that browser does not run the Neo WebMCP extension');
+      throw new Error('that browser does not run the Kyte WebMCP extension');
     }
     return ws;
   }

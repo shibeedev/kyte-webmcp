@@ -17,7 +17,7 @@ const TEST_PORT_SHIFT = 100;
 
 /** The port a test bridge started with startClient(port) really listens on. */
 export const bridgePort = (port: number) => port + TEST_PORT_SHIFT;
-export const CHROME = process.env.NEO_TEST_CHROME ?? path.join(ROOT, '.cache', 'chrome', 'chrome', 'win64-155.0.8059.41', 'chrome-win64', 'chrome.exe');
+export const CHROME = process.env.KYTE_TEST_CHROME ?? path.join(ROOT, '.cache', 'chrome', 'chrome', 'win64-155.0.8059.41', 'chrome-win64', 'chrome.exe');
 export const ARTIFACTS = path.join(ROOT, 'tests', '.artifacts');
 
 export interface BrowserHandle {
@@ -27,7 +27,7 @@ export interface BrowserHandle {
 }
 
 export async function launchBrowser(opts: { headless?: boolean; args?: string[]; extensions?: boolean; lang?: string; webmcp?: boolean; downloadDir?: string; devtools?: boolean; unmuted?: boolean } = {}): Promise<BrowserHandle> {
-  const userDataDir = mkdtempSync(path.join(os.tmpdir(), 'neo-webmcp-test-'));
+  const userDataDir = mkdtempSync(path.join(os.tmpdir(), 'kyte-webmcp-test-'));
   if (opts.downloadDir) {
     // Like a user setting a download folder: keeps test downloads out of the real Downloads folder.
     mkdirSync(path.join(userDataDir, 'Default'), { recursive: true });
@@ -64,12 +64,12 @@ export async function launchBrowser(opts: { headless?: boolean; args?: string[];
   };
 }
 
-/** The extension's service worker, ready to evaluate (neoCore is exposed for tests). */
+/** The extension's service worker, ready to evaluate (kyteCore is exposed for tests). */
 export async function extensionWorker(browser: Browser): Promise<WebWorker> {
   const target = await browser.waitForTarget((t) => t.type() === 'service_worker' && t.url().startsWith(`chrome-extension://${EXTENSION_ID}/`), { timeout: 20_000 });
   const worker = (await target.worker())!;
   for (let i = 0; i < 100; i++) {
-    if ((await worker.evaluate(() => typeof (globalThis as any).neoCore).catch(() => 'undefined')) === 'object') return worker;
+    if ((await worker.evaluate(() => typeof (globalThis as any).kyteCore).catch(() => 'undefined')) === 'object') return worker;
     await new Promise((r) => setTimeout(r, 100));
   }
   throw new Error('extension core did not start');
@@ -87,17 +87,17 @@ export async function startClient(port: number, opts: { env?: Record<string, str
     args: [CLI, '--port', String(bridgePort(port))],
     env: {
       ...(process.env as Record<string, string>),
-      NEO_WEBMCP_OUTPUT_DIR: path.join(ARTIFACTS, 'output'),
+      KYTE_WEBMCP_OUTPUT_DIR: path.join(ARTIFACTS, 'output'),
       // Isolation: the test broker keeps its own state and never looks at the user's real Chrome profiles.
-      NEO_WEBMCP_STATE_DIR: path.join(ARTIFACTS, 'state'),
-      NEO_WEBMCP_NO_DEFAULT_PROFILES: '1',
+      KYTE_WEBMCP_STATE_DIR: path.join(ARTIFACTS, 'state'),
+      KYTE_WEBMCP_NO_DEFAULT_PROFILES: '1',
       ...(opts.env ?? {}),
     },
     stderr: 'pipe',
   });
   const stderr: string[] = [];
   transport.stderr?.on('data', (d: Buffer) => stderr.push(String(d)));
-  const client = new Client({ name: opts.name ?? 'neo-e2e', version: '1.0.0' });
+  const client = new Client({ name: opts.name ?? 'kyte-e2e', version: '1.0.0' });
   await client.connect(transport);
   return { client, stderr, close: () => client.close() };
 }

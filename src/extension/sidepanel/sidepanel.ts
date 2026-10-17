@@ -190,9 +190,9 @@ function renderSettings(): void {
 
 function renderSetup(): void {
   if (!state) return;
-  const path = cliPath || '<path-to-neo-webmcp>/dist/bridge/cli.mjs';
-  $('cmd-claude').textContent = `claude mcp add neo-webmcp -- node "${path}"`;
-  $('cmd-json').textContent = JSON.stringify({ mcpServers: { 'neo-webmcp': { command: 'node', args: [path] } } }, null, 2);
+  const path = cliPath || '<path-to-kyte-webmcp>/dist/bridge/cli.mjs';
+  $('cmd-claude').textContent = `claude mcp add kyte-webmcp -- node "${path}"`;
+  $('cmd-json').textContent = JSON.stringify({ mcpServers: { 'kyte-webmcp': { command: 'node', args: [path] } } }, null, 2);
   $('ports').textContent = t('portsInfo', [String(state.ports[0]), String(state.ports[1])]);
   $('version').textContent = t('versionInfo', [state.extVersion, state.extensionId]);
 }

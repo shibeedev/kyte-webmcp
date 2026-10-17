@@ -52,7 +52,7 @@ export const devtoolsPanelFeature: Feature = {
         );
       } else if (ctx.open) lines.push('No element is selected in the Elements panel.');
       if (ctx.inbox.length) {
-        lines.push(`Shared by the user from the Neo MCP DevTools panel (${ctx.inbox.length}):`);
+        lines.push(`Shared by the user from the Kyte WebMCP DevTools panel (${ctx.inbox.length}):`);
         for (const item of ctx.inbox) {
           const data = item.data as Record<string, any>;
           const what =
@@ -64,7 +64,7 @@ export const devtoolsPanelFeature: Feature = {
           if (item.kind === 'element' && data.html) lines.push(`  html: ${truncate(String(data.html), 1000)}`);
         }
         if (args.clearInbox) core.ui.clearInbox(tabId, ctx.inbox.map((i) => i.id));
-      } else lines.push('The user has not shared anything from the Neo MCP DevTools panel.');
+      } else lines.push('The user has not shared anything from the Kyte WebMCP DevTools panel.');
       return lines.filter(Boolean).join('\n');
     },
 

@@ -1,4 +1,4 @@
-# BRD — Neo WebMCP
+# BRD — Kyte WebMCP Extension
 <!--
 ## HƯỚNG DẪN ĐỌC (cho AI)
 - Đọc section 1 → hiểu mục tiêu, KHÔNG implement
@@ -23,7 +23,7 @@
 
 # 1. Business
 ## 1.1. Mô tả ngắn gọn
-Neo WebMCP là một MCP server được đóng gói thành extension Chrome. Nó cho các AI agent (Claude Code, Claude Desktop, Cursor, VS Code và các MCP client khác) điều khiển chính trình duyệt Chrome mà người dùng đang dùng — với phiên đăng nhập, cookie và extension thật — thay vì một trình duyệt tự động hóa tách biệt. Agent làm được mọi thao tác người dùng làm trên trình duyệt, xem và hiểu được video có trên trang, và đọc được toàn bộ dữ liệu mà Chrome DevTools nhìn thấy.
+Kyte WebMCP Extension (gọi tắt Kyte WebMCP) là một MCP server được đóng gói thành extension Chrome. Nó cho các AI agent (Claude Code, Claude Desktop, Cursor, VS Code và các MCP client khác) điều khiển chính trình duyệt Chrome mà người dùng đang dùng — với phiên đăng nhập, cookie và extension thật — thay vì một trình duyệt tự động hóa tách biệt. Agent làm được mọi thao tác người dùng làm trên trình duyệt, xem và hiểu được video có trên trang, và đọc được toàn bộ dữ liệu mà Chrome DevTools nhìn thấy.
 
 Sản phẩm dành cho lập trình viên và người dùng chuyên sâu dùng AI agent để kiểm thử và gỡ lỗi web, tự động hóa thao tác trên web, và nghiên cứu nội dung (kể cả video). Người dùng cài extension và khai báo bridge trong MCP client một lần; từ đó agent làm việc trực tiếp trên Chrome, còn người dùng theo dõi và có thể dừng agent bất kỳ lúc nào từ giao diện của extension.
 
@@ -84,7 +84,7 @@ flowchart LR
 ```mermaid
 flowchart TD
     A["MCP client khởi động bridge"] --> B["Bridge mở kênh nội bộ trên máy và chờ"]
-    B --> C{"Kết nối đến từ đúng extension Neo WebMCP?"}
+    B --> C{"Kết nối đến từ đúng extension Kyte WebMCP?"}
     C -->|Không| D["Từ chối kết nối"]
     C -->|Có| E["Phiên làm việc bắt đầu"]
     E --> F["Agent gọi tool, extension thực hiện, trả kết quả"]
@@ -96,7 +96,7 @@ flowchart TD
 ```
 - **Lưu ý**: <!-- constraint cứng — không được bỏ qua -->
   - Kênh giữa bridge và extension chỉ lắng nghe trên địa chỉ loopback của máy, không mở ra mạng.
-  - Bridge từ chối mọi kết nối không đến từ extension Neo WebMCP, kể cả kết nối từ trang web đang mở trong trình duyệt.
+  - Bridge từ chối mọi kết nối không đến từ extension Kyte WebMCP, kể cả kết nối từ trang web đang mở trong trình duyệt.
   - Mất kết nối giữa chừng thì lệnh đang chạy phải kết thúc bằng lỗi rõ ràng, không treo agent.
   - Danh sách tool agent nhìn thấy không phụ thuộc việc extension đã kết nối hay chưa.
 
@@ -328,7 +328,7 @@ flowchart TD
 - **Module**: devtools-panel
 - **Mô tả**: Khi người dùng mở DevTools trên một tab, extension có một panel riêng trong DevTools. Phần tử người dùng đang chọn trong bảng Elements luôn được cung cấp cho agent (selector, HTML rút gọn, mã tham chiếu). Trong panel, người dùng gửi phần tử đang chọn hoặc một request trong danh sách request cho agent, kèm ghi chú; agent đọc được các mục đã gửi. Ngược lại, agent mở cho người dùng xem một phần tử trong bảng Elements, hoặc một file nguồn tại dòng chỉ định trong bảng Sources. Panel hiển thị trạng thái kết nối của agent với tab đó và các hành động agent vừa làm trên tab.
 - **Giao diện**:
-  - Panel "Neo MCP" trong DevTools: trạng thái agent trên tab, phần tử đang chọn, ô ghi chú và nút gửi cho agent, danh sách request gần đây có nút gửi, nhật ký hành động của agent trên tab.
+  - Panel "Kyte WebMCP" trong DevTools: trạng thái agent trên tab, phần tử đang chọn, ô ghi chú và nút gửi cho agent, danh sách request gần đây có nút gửi, nhật ký hành động của agent trên tab.
 - **Lưu ý**: <!-- constraint cứng — không được bỏ qua -->
   - Mở phần tử/file trong DevTools chỉ hoạt động khi DevTools đang mở trên tab đó; nếu không, agent nhận lỗi hướng dẫn người dùng mở DevTools.
 
@@ -359,7 +359,7 @@ flowchart TD
     D -->|Không| F["Agent vẫn gọi được qua lệnh gọi tool WebMCP chung"]
 ```
 - **Lưu ý**: <!-- constraint cứng — không được bỏ qua -->
-  - Tên tool được công bố không bao giờ trùng tên tool sẵn có của Neo WebMCP.
+  - Tên tool được công bố không bao giờ trùng tên tool sẵn có của Kyte WebMCP.
   - MCP client không hỗ trợ cập nhật tool động vẫn gọi được tool của trang qua lệnh gọi tool WebMCP chung (2.2.22).
 
 ---
@@ -378,6 +378,7 @@ flowchart TD
 - **Module**: giao-dien
 - **Mô tả**: Bấm vào biểu tượng extension để mở side panel. Side panel hiển thị trạng thái kết nối (đang chờ MCP client, hoặc số phiên đang kết nối) và hướng dẫn cấu hình MCP client có nút sao chép; danh sách phiên (tên client, tab group, tab đích, số lệnh đã chạy) với nút Dừng/Tiếp tục cho từng phiên và nút Dừng tất cả; nhật ký hoạt động trực tiếp của các lệnh agent (thời gian, tên lệnh, tóm tắt tham số, thời lượng, thành công/lỗi), có lọc và xem chi tiết; tool WebMCP của tab hiện tại; cài đặt (bật/tắt chỉ báo trên trang, chọn model chép lời).
 - **Giao diện**:
+  - Phong cách giống phần Cài đặt hệ thống (System Settings) của macOS, theo chế độ sáng/tối của máy: các mục là nhóm bo góc có tiêu đề phía trên, công tắc và nút kiểu macOS. Panel trong DevTools và chỉ báo trên trang dùng cùng phong cách; icon extension là chữ K trên nền xanh bo góc kiểu icon ứng dụng macOS.
   - Phần đầu: trạng thái kết nối và nút Dừng tất cả.
   - Các mục: Phiên, Nhật ký hoạt động, WebMCP của tab hiện tại, Cài đặt, Hướng dẫn kết nối.
 - **Lưu ý**: <!-- constraint cứng — không được bỏ qua -->
@@ -432,7 +433,7 @@ flowchart TD
 ### 2.2.30. Feature 30: Kênh DevTools đầy đủ
 - **Trạng thái**: done
 - **Module**: devtools
-- **Mô tả**: Chrome chỉ cho extension dùng một phần các nhóm dữ liệu DevTools; các nhóm còn lại (độ phủ mã JavaScript, heap snapshot, bảng Media, Memory, IndexedDB, Service Worker, Security, Animation, Preload…) chỉ mở cho kết nối gỡ lỗi từ xa của chính Chrome. Người dùng muốn có DevTools đầy đủ mà không phải thao tác mỗi lần, nên hệ thống có thêm một kênh DevTools đầy đủ, dùng tự động khi một lệnh cần nhóm dữ liệu mà extension không có. Kênh này kết nối tới đúng trình duyệt đang chạy extension theo một trong hai cách: với profile riêng cho agent do Neo WebMCP khởi chạy thì kết nối không cần người dùng xác nhận lần nào; với profile thật của người dùng (sau khi người dùng bật cho phép gỡ lỗi từ xa trong Chrome một lần), Chrome hỏi người dùng xác nhận khi kênh nối vào lần đầu, sau đó kênh được giữ lâu dài và dùng chung cho mọi phiên agent nên không hỏi lại cho tới khi Chrome khởi động lại. Khi kênh chưa sẵn sàng, các lệnh cần nó trả lời kèm hướng dẫn bật, còn các lệnh khác vẫn chạy bằng extension.
+- **Mô tả**: Chrome chỉ cho extension dùng một phần các nhóm dữ liệu DevTools; các nhóm còn lại (độ phủ mã JavaScript, heap snapshot, bảng Media, Memory, IndexedDB, Service Worker, Security, Animation, Preload…) chỉ mở cho kết nối gỡ lỗi từ xa của chính Chrome. Người dùng muốn có DevTools đầy đủ mà không phải thao tác mỗi lần, nên hệ thống có thêm một kênh DevTools đầy đủ, dùng tự động khi một lệnh cần nhóm dữ liệu mà extension không có. Kênh này kết nối tới đúng trình duyệt đang chạy extension theo một trong hai cách: với profile riêng cho agent do Kyte WebMCP khởi chạy thì kết nối không cần người dùng xác nhận lần nào; với profile thật của người dùng (sau khi người dùng bật cho phép gỡ lỗi từ xa trong Chrome một lần), Chrome hỏi người dùng xác nhận khi kênh nối vào lần đầu, sau đó kênh được giữ lâu dài và dùng chung cho mọi phiên agent nên không hỏi lại cho tới khi Chrome khởi động lại. Khi kênh chưa sẵn sàng, các lệnh cần nó trả lời kèm hướng dẫn bật, còn các lệnh khác vẫn chạy bằng extension.
 - **Flow**:
 
 ```mermaid
@@ -450,7 +451,7 @@ flowchart TD
 - **Lưu ý**: <!-- constraint cứng — không được bỏ qua -->
   - Hệ thống không bao giờ tự xác nhận thay người dùng hộp thoại cho phép gỡ lỗi từ xa của Chrome.
   - Với profile thật, sau khi người dùng đồng ý một lần, các phiên agent tiếp theo không làm Chrome hỏi lại cho tới khi Chrome khởi động lại.
-  - Kênh đầy đủ chỉ nhận yêu cầu từ các bridge Neo WebMCP trên cùng máy, có xác thực; không mở ra mạng.
+  - Kênh đầy đủ chỉ nhận yêu cầu từ các bridge Kyte WebMCP trên cùng máy, có xác thực; không mở ra mạng.
   - Lệnh cần kênh đầy đủ luôn chạy trên đúng tab mà agent chỉ định, không nhầm sang tab khác.
 
 ---

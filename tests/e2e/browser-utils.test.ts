@@ -41,41 +41,41 @@ describe('browser utilities and prompts', () => {
   });
 
   it('downloads a file and waits for it', async () => {
-    const started = await ok(mcp.client, 'downloads', { action: 'download', url: `${srv.a}/media/sample.vtt`, filename: 'neo-test-captions.vtt' });
+    const started = await ok(mcp.client, 'downloads', { action: 'download', url: `${srv.a}/media/sample.vtt`, filename: 'kyte-test-captions.vtt' });
     const id = Number(started.text.match(/#(\d+)/)![1]);
     const done = await ok(mcp.client, 'downloads', { action: 'wait', id, timeoutMs: 20_000 });
-    assert.match(done.text, /Download finished: #\d+ complete .*neo-test-captions.*\.vtt/);
+    assert.match(done.text, /Download finished: #\d+ complete .*kyte-test-captions.*\.vtt/);
     const file = done.text.match(/complete (.+?\.vtt)/)![1]!;
     assert.ok(file.startsWith(downloadDir), `saved inside the test folder, not the user's Downloads: ${file}`);
     assert.match(readFileSync(file, 'utf8'), /^WEBVTT/);
-    assert.match((await ok(mcp.client, 'downloads', { action: 'list' })).text, /neo-test-captions/);
+    assert.match((await ok(mcp.client, 'downloads', { action: 'list' })).text, /kyte-test-captions/);
   });
 
   it('searches history', async () => {
-    const r = await ok(mcp.client, 'history_search', { text: 'Neo Test Shop' });
-    assert.match(r.text, /Neo Test Shop — http:\/\/localhost:\d+\/index\.html/);
+    const r = await ok(mcp.client, 'history_search', { text: 'Kyte Test Shop' });
+    assert.match(r.text, /Kyte Test Shop — http:\/\/localhost:\d+\/index\.html/);
   });
 
   it('creates, finds and removes bookmarks', async () => {
-    const created = await ok(mcp.client, 'bookmarks', { action: 'create', title: 'Neo bookmark test', url: `${srv.a}/page2.html` });
+    const created = await ok(mcp.client, 'bookmarks', { action: 'create', title: 'Kyte bookmark test', url: `${srv.a}/page2.html` });
     const id = created.text.match(/\[(\d+)\]/)![1]!;
-    assert.match((await ok(mcp.client, 'bookmarks', { action: 'search', query: 'Neo bookmark test' })).text, new RegExp(`\\[${id}\\] Neo bookmark test`));
+    assert.match((await ok(mcp.client, 'bookmarks', { action: 'search', query: 'Kyte bookmark test' })).text, new RegExp(`\\[${id}\\] Kyte bookmark test`));
     await ok(mcp.client, 'bookmarks', { action: 'remove', id });
-    assert.match((await ok(mcp.client, 'bookmarks', { action: 'search', query: 'Neo bookmark test' })).text, /No bookmarks match/);
+    assert.match((await ok(mcp.client, 'bookmarks', { action: 'search', query: 'Kyte bookmark test' })).text, /No bookmarks match/);
   });
 
   it('writes and reads the clipboard without touching the system clipboard', async () => {
     const before = systemClipboardHash();
-    await ok(mcp.client, 'clipboard', { action: 'write', text: 'hello from neo webmcp' });
+    await ok(mcp.client, 'clipboard', { action: 'write', text: 'hello from kyte webmcp' });
     const read = await ok(mcp.client, 'clipboard', { action: 'read' });
-    assert.match(read.text, /hello from neo webmcp/);
+    assert.match(read.text, /hello from kyte webmcp/);
     assert.equal(systemClipboardHash(), before, 'headless test browser must not overwrite the real clipboard');
   });
 
   it('saves the page as PDF', async () => {
-    const target = path.join(ARTIFACTS, 'output', 'neo-test-page.pdf');
+    const target = path.join(ARTIFACTS, 'output', 'kyte-test-page.pdf');
     const r = await ok(mcp.client, 'pdf_save', { savePath: target });
-    assert.match(r.text, /Saved "Neo Test Shop" as PDF to .*neo-test-page\.pdf/);
+    assert.match(r.text, /Saved "Kyte Test Shop" as PDF to .*kyte-test-page\.pdf/);
     assert.ok(existsSync(target));
     assert.equal(readFileSync(target).subarray(0, 5).toString(), '%PDF-');
   });

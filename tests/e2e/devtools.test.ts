@@ -85,9 +85,9 @@ describe('devtools data', () => {
     await ok(mcp.client, 'network_mock', { action: 'clear' });
     const r3 = await ok(mcp.client, 'evaluate', { expression: 'fetch("/api/echo").then(r => r.status)' });
     assert.match(r3.text, /200/);
-    await ok(mcp.client, 'network_mock', { action: 'add', urlPattern: '*/api/echo', setHeaders: { 'x-injected': 'neo' } });
+    await ok(mcp.client, 'network_mock', { action: 'add', urlPattern: '*/api/echo', setHeaders: { 'x-injected': 'kyte' } });
     const r4 = await ok(mcp.client, 'evaluate', { expression: 'fetch("/api/echo").then(r => r.json()).then(j => j.headers["x-injected"])' });
-    assert.match(r4.text, /"neo"/);
+    assert.match(r4.text, /"kyte"/);
     await ok(mcp.client, 'network_mock', { action: 'clear' });
   });
 
@@ -141,10 +141,10 @@ describe('devtools data', () => {
     await ok(mcp.client, 'wait_for', { text: 'ready', timeoutMs: 8000 });
     const cookies = await ok(mcp.client, 'storage', { area: 'cookies' });
     assert.match(cookies.text, /session_id=abc123/);
-    await ok(mcp.client, 'storage', { area: 'cookies', action: 'set', key: 'agent', value: 'neo', httpOnly: true });
-    assert.match((await ok(mcp.client, 'storage', { area: 'cookies', key: 'agent' })).text, /agent=neo .*HttpOnly/);
+    await ok(mcp.client, 'storage', { area: 'cookies', action: 'set', key: 'agent', value: 'kyte', httpOnly: true });
+    assert.match((await ok(mcp.client, 'storage', { area: 'cookies', key: 'agent' })).text, /agent=kyte .*HttpOnly/);
     await ok(mcp.client, 'storage', { area: 'cookies', action: 'remove', key: 'agent' });
-    assert.doesNotMatch((await ok(mcp.client, 'storage', { area: 'cookies' })).text, /agent=neo/);
+    assert.doesNotMatch((await ok(mcp.client, 'storage', { area: 'cookies' })).text, /agent=kyte/);
     const local = await ok(mcp.client, 'storage', { area: 'local' });
     assert.match(local.text, /user = \{"name":"tester","plan":"pro"\}/);
     await ok(mcp.client, 'storage', { area: 'local', action: 'set', key: 'fromAgent', value: '42' });
@@ -162,7 +162,7 @@ describe('devtools data', () => {
     const sw = await ok(mcp.client, 'storage', { area: 'serviceworkers' });
     assert.match(sw.text, /sw\.js \((activated|activating)\)/);
     const manifest = await ok(mcp.client, 'storage', { area: 'manifest' });
-    assert.match(manifest.text, /name: Neo Fixture App/);
+    assert.match(manifest.text, /name: Kyte Fixture App/);
     const quota = await ok(mcp.client, 'storage', { area: 'quota' });
     assert.match(quota.text, /used of/);
     // The page can still open its database afterwards (we closed ours).

@@ -98,7 +98,7 @@ export class Session {
       this.groups.set(tab.windowId, groupId);
       await chrome.tabGroups.update(groupId, { title: this.name, color: this.color });
     } catch (error) {
-      console.warn('[neo-webmcp] grouping failed', error);
+      console.warn('[kyte-webmcp] grouping failed', error);
     }
   }
 }

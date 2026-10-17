@@ -128,13 +128,13 @@ export async function clickablePoint(cdp: Cdp, node: NodeRef): Promise<ClickPoin
 }
 
 async function isInside(cdp: Cdp, node: NodeRef, otherBackendId: number): Promise<boolean> {
-  const a = await cdp.send(node.tabId, 'DOM.resolveNode', { backendNodeId: node.backendNodeId, objectGroup: 'neo-webmcp-call' });
-  const b = await cdp.send(node.tabId, 'DOM.resolveNode', { backendNodeId: otherBackendId, objectGroup: 'neo-webmcp-call' });
+  const a = await cdp.send(node.tabId, 'DOM.resolveNode', { backendNodeId: node.backendNodeId, objectGroup: 'kyte-webmcp-call' });
+  const b = await cdp.send(node.tabId, 'DOM.resolveNode', { backendNodeId: otherBackendId, objectGroup: 'kyte-webmcp-call' });
   const res = await cdp.send(node.tabId, 'Runtime.callFunctionOn', {
     objectId: a.object.objectId,
     // Our own indicator (pointer-events: none, in a closed shadow root) never blocks clicks.
     functionDeclaration:
-      'function(other){ const root = other.getRootNode && other.getRootNode(); if (root && root.host && root.host.tagName === "NEO-WEBMCP-INDICATOR") return true; if (other.tagName === "NEO-WEBMCP-INDICATOR") return true; return this === other || this.contains(other) || (root && root.host && this.contains(root.host)) || (other.contains && other.contains(this) && other.tagName === "LABEL"); }',
+      'function(other){ const root = other.getRootNode && other.getRootNode(); if (root && root.host && root.host.tagName === "KYTE-WEBMCP-INDICATOR") return true; if (other.tagName === "KYTE-WEBMCP-INDICATOR") return true; return this === other || this.contains(other) || (root && root.host && this.contains(root.host)) || (other.contains && other.contains(this) && other.tagName === "LABEL"); }',
     arguments: [{ objectId: b.object.objectId }],
     returnByValue: true,
   });

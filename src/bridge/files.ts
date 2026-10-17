@@ -4,7 +4,7 @@ import os from 'node:os';
 import type { ServiceHandler } from './hub.ts';
 
 export function defaultOutputDir(): string {
-  return path.join(os.homedir(), '.neo-webmcp', 'output');
+  return path.join(os.homedir(), '.kyte-webmcp', 'output');
 }
 
 function timestamp(): string {

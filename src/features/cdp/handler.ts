@@ -60,7 +60,7 @@ export const cdpFeature: Feature = {
       if (!domain || !args.method.includes('.')) throw new ToolError('method must look like "Domain.command".');
       await core.cdp.ensure(tabId);
       if (args.method.endsWith('.disable') && MANAGED.has(domain)) {
-        return `Ignored ${args.method}: other Neo WebMCP tools rely on the ${domain} domain, so it stays enabled.`;
+        return `Ignored ${args.method}: other Kyte WebMCP tools rely on the ${domain} domain, so it stays enabled.`;
       }
       const target = await resolveSession(core, tabId, args.frame, args.sessionId);
       const via = args.via ?? 'auto';

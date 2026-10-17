@@ -8,8 +8,8 @@ import { ToolError, errorMessage } from './util.ts';
 const DEFAULT_TIMEOUT_MS = 30_000;
 
 /** Agent-facing texts stay in English whatever the UI language. */
-const PAUSED_TEXT = 'The user paused browser control for this session in the Neo WebMCP extension. Ask the user to click Resume in the Neo WebMCP side panel (or on the page) before continuing.';
-const STOPPED_TEXT = 'The user pressed Stop in the Neo WebMCP extension; the command was cancelled and the session is paused. Ask the user before continuing.';
+const PAUSED_TEXT = 'The user paused browser control for this session in the Kyte WebMCP extension. Ask the user to click Resume in the Kyte WebMCP side panel (or on the page) before continuing.';
+const STOPPED_TEXT = 'The user pressed Stop in the Kyte WebMCP extension; the command was cancelled and the session is paused. Ask the user before continuing.';
 
 function normalize(out: HandlerOutput): ToolResult {
   if (typeof out === 'string') return { content: [{ type: 'text', text: out }] };
@@ -66,7 +66,7 @@ export class Dispatcher {
     const spec = specByName.get(tool);
     const handler = this.#handlers.get(tool);
     if (!spec || !handler) {
-      session.send({ t: 'result', id, result: { content: [{ type: 'text', text: `The extension does not implement "${tool}". Update the Neo WebMCP extension to match the bridge.` }], isError: true } });
+      session.send({ t: 'result', id, result: { content: [{ type: 'text', text: `The extension does not implement "${tool}". Update the Kyte WebMCP extension to match the bridge.` }], isError: true } });
       return;
     }
     if (session.paused) {

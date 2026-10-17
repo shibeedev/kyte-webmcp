@@ -45,8 +45,8 @@ async function leftEdge(png: Buffer | Uint8Array): Promise<[number, number, numb
   const stats = await sharp(strip).stats();
   return stats.channels.slice(0, 3).map((c) => Math.round(c.mean)) as [number, number, number];
 }
-/** The border pulses between strong and light violet; on a white page both read as "blue/red above green". */
-const isViolet = ([r, g, b]: [number, number, number]) => b - g > 25 && r - g > 8;
+/** The border pulses between strong and light system blue; on a white page both read as "blue well above red and green". */
+const isAccentBlue = ([r, g, b]: [number, number, number]) => b - g > 40 && b - r > 70;
 
 describe('side panel and indicator (English)', () => {
   let srv: FixtureServers;
@@ -68,18 +68,18 @@ describe('side panel and indicator (English)', () => {
     panel = await openSidePanel(bh);
     assert.match(await waitText(panel, '#status', /Waiting for an MCP client/), /Waiting/);
     assert.equal(await panel.$eval('#setup', (d) => (d as HTMLDetailsElement).open), true);
-    assert.match(await panel.$eval('#cmd-claude', (e) => e.textContent ?? ''), /claude mcp add neo-webmcp -- node "<path-to-neo-webmcp>\/dist\/bridge\/cli\.mjs"/);
+    assert.match(await panel.$eval('#cmd-claude', (e) => e.textContent ?? ''), /claude mcp add kyte-webmcp -- node "<path-to-kyte-webmcp>\/dist\/bridge\/cli\.mjs"/);
     assert.match(await panel.$eval('#no-sessions', (e) => (e as HTMLElement).innerText), /No MCP client is connected yet/);
     await panel.screenshot({ path: path.join(SHOTS, 'sidepanel-waiting-en.png') });
   });
 
   it('updates live when a client connects and shows the exact setup command', async () => {
-    mcp = await startClient(17832, { name: 'neo-ui' });
+    mcp = await startClient(17832, { name: 'kyte-ui' });
     await waitConnected(mcp.client);
     await waitText(panel, '#status', /Connected sessions: 1/);
-    const session = await waitText(panel, '#sessions', /neo-ui/);
+    const session = await waitText(panel, '#sessions', /kyte-ui/);
     assert.match(session, /Target: follows your active tab/);
-    assert.equal(await waitText(panel, '#cmd-claude', /cli\.mjs"$/), `claude mcp add neo-webmcp -- node "${CLI}"`);
+    assert.equal(await waitText(panel, '#cmd-claude', /cli\.mjs"$/), `claude mcp add kyte-webmcp -- node "${CLI}"`);
     assert.equal(await panel.$eval('#stop-all', (b) => (b as HTMLButtonElement).hidden), false);
   });
 
@@ -90,7 +90,7 @@ describe('side panel and indicator (English)', () => {
     assert.match(log, /tab_open/);
     assert.match(log, /✓ \d+ ms/);
     const session = await waitText(panel, '#sessions', /Idle/);
-    assert.match(session, /Target: "Neo Test Shop"/);
+    assert.match(session, /Target: "Kyte Test Shop"/);
     await panel.click('#activity li[data-id]');
     assert.equal(await panel.$eval('#activity li[data-id]', (li) => li.classList.contains('open')), true);
     await panel.type('#filter', 'snapshot');
@@ -105,23 +105,23 @@ describe('side panel and indicator (English)', () => {
     const page = await fixturePage(bh, '/index.html');
     const before = await page.evaluate(() => ({ w: document.documentElement.scrollWidth, h: document.documentElement.scrollHeight, bottom: document.getElementById('bottom')!.getBoundingClientRect().top }));
     const running = call(mcp.client, 'wait_for', { timeMs: 2500 });
-    await page.waitForSelector('neo-webmcp-indicator', { visible: true, timeout: 5000 });
+    await page.waitForSelector('kyte-webmcp-indicator', { visible: true, timeout: 5000 });
     const afterShow = await page.evaluate(() => ({ w: document.documentElement.scrollWidth, h: document.documentElement.scrollHeight, bottom: document.getElementById('bottom')!.getBoundingClientRect().top }));
     assert.deepEqual(afterShow, before, 'indicator must not change the layout');
-    assert.equal(await page.$eval('neo-webmcp-indicator', (e) => e.getAttribute('aria-hidden')), 'true');
+    assert.equal(await page.$eval('kyte-webmcp-indicator', (e) => e.getAttribute('aria-hidden')), 'true');
     const hits = await page.evaluate(() => {
       const at = (x: number, y: number) => document.elementFromPoint(x, y)?.tagName ?? null;
       return { edge: at(1, 300), pillLabel: at(innerWidth / 2 - 60, 22), center: at(innerWidth / 2, innerHeight / 2) };
     });
-    assert.notEqual(hits.edge, 'NEO-WEBMCP-INDICATOR');
-    assert.notEqual(hits.pillLabel, 'NEO-WEBMCP-INDICATOR');
-    assert.notEqual(hits.center, 'NEO-WEBMCP-INDICATOR');
+    assert.notEqual(hits.edge, 'KYTE-WEBMCP-INDICATOR');
+    assert.notEqual(hits.pillLabel, 'KYTE-WEBMCP-INDICATOR');
+    assert.notEqual(hits.center, 'KYTE-WEBMCP-INDICATOR');
     const userView = await page.screenshot({ type: 'png', path: path.join(SHOTS, 'indicator-active.png') });
     const edge = await leftEdge(userView);
-    assert.ok(isViolet(edge), `the user sees the violet border (left edge colour ${edge.join(',')})`);
+    assert.ok(isAccentBlue(edge), `the user sees the blue border (left edge colour ${edge.join(',')})`);
     await running;
     const agentShot = await ok(mcp.client, 'screenshot', { format: 'png', maxWidth: 1280 });
-    assert.ok(!isViolet(await leftEdge(Buffer.from(agentShot.images[0]!.data, 'base64'))), 'the agent screenshot hides the indicator');
+    assert.ok(!isAccentBlue(await leftEdge(Buffer.from(agentShot.images[0]!.data, 'base64'))), 'the agent screenshot hides the indicator');
     const snap = await ok(mcp.client, 'page_snapshot');
     assert.doesNotMatch(snap.text, /controlling this tab/);
   });
@@ -134,7 +134,7 @@ describe('side panel and indicator (English)', () => {
     assert.ok(refused.isError);
     assert.match(refused.text, /paused browser control/);
     const page = await fixturePage(bh, '/index.html');
-    await page.waitForSelector('neo-webmcp-indicator', { visible: true, timeout: 5000 });
+    await page.waitForSelector('kyte-webmcp-indicator', { visible: true, timeout: 5000 });
     await page.screenshot({ path: path.join(SHOTS, 'indicator-paused.png') });
     await panel.click('#sessions button');
     await waitText(panel, '#sessions', /Idle|Working/);
@@ -144,7 +144,7 @@ describe('side panel and indicator (English)', () => {
   it('stops the agent from the Stop button on the page', async () => {
     const page = await fixturePage(bh, '/index.html');
     const running = call(mcp.client, 'wait_for', { timeMs: 4000 });
-    await page.waitForSelector('neo-webmcp-indicator', { visible: true, timeout: 5000 });
+    await page.waitForSelector('kyte-webmcp-indicator', { visible: true, timeout: 5000 });
     // The button lives in a closed shadow root: locate it through CDP, then click like a user.
     const cdp = await page.createCDPSession();
     const { root } = await cdp.send('DOM.getDocument', { depth: -1, pierce: true });
@@ -157,7 +157,7 @@ describe('side panel and indicator (English)', () => {
       return undefined;
     };
     const host = (function find(n: any): any {
-      if (n.nodeName === 'NEO-WEBMCP-INDICATOR') return n;
+      if (n.nodeName === 'KYTE-WEBMCP-INDICATOR') return n;
       for (const c of [...(n.children ?? []), ...(n.shadowRoots ?? [])]) {
         const f = find(c);
         if (f) return f;
@@ -186,7 +186,7 @@ describe('side panel and indicator (English)', () => {
     assert.equal(await sw.evaluate(() => chrome.storage.local.get('settings').then((s) => (s.settings as { overlay?: boolean })?.overlay)), false);
     const page = await fixturePage(bh, '/index.html');
     await ok(mcp.client, 'wait_for', { timeMs: 600 });
-    assert.equal(await page.$('neo-webmcp-indicator'), null, 'indicator removed when switched off');
+    assert.equal(await page.$('kyte-webmcp-indicator'), null, 'indicator removed when switched off');
     await panel.select('#set-whisper', 'small');
     await panel.reload();
     await panel.waitForFunction(() => document.getElementById('status-text')?.textContent !== '');

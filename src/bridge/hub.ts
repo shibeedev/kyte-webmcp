@@ -16,7 +16,7 @@ interface PendingCall {
 const STALE_MS = 45_000;
 
 /**
- * Loopback WebSocket endpoint the extension connects to. Only the Neo WebMCP
+ * Loopback WebSocket endpoint the extension connects to. Only the Kyte WebMCP
  * extension origin is accepted; web pages cannot forge the Origin header.
  */
 export class ExtensionHub extends EventEmitter {
@@ -46,7 +46,7 @@ export class ExtensionHub extends EventEmitter {
     for (const port of candidates) {
       if (await this.#tryListen(port)) return (this.port = port);
     }
-    throw new Error(`No free port in ${candidates[0]}-${candidates.at(-1)}; too many neo-webmcp bridges running?`);
+    throw new Error(`No free port in ${candidates[0]}-${candidates.at(-1)}; too many kyte-webmcp bridges running?`);
   }
 
   #tryListen(port: number): Promise<boolean> {
@@ -88,7 +88,7 @@ export class ExtensionHub extends EventEmitter {
       this.#socket = null;
       this.extension = null;
       for (const [id, pending] of this.#pending) {
-        pending.reject(new Error('The Neo WebMCP extension disconnected while the command was running.'));
+        pending.reject(new Error('The Kyte WebMCP extension disconnected while the command was running.'));
         this.#pending.delete(id);
       }
       log('extension disconnected');
@@ -210,4 +210,4 @@ export class ExtensionHub extends EventEmitter {
 }
 
 export const NOT_CONNECTED_HELP =
-  'The Neo WebMCP Chrome extension is not connected to this bridge. Check that Chrome is running, that the Neo WebMCP extension is installed and enabled (chrome://extensions), and open its side panel to see the connection status.';
+  'The Kyte WebMCP Chrome extension is not connected to this bridge. Check that Chrome is running, that the Kyte WebMCP extension is installed and enabled (chrome://extensions), and open its side panel to see the connection status.';

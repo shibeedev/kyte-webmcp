@@ -27,29 +27,29 @@ describe('core flow', () => {
     assert.ok(tools.length >= 50, `expected ≥50 tools, got ${tools.length}`);
     const status = await ok(mcp.client, 'browser_status');
     assert.match(status.text, /Extension: connected/);
-    assert.match(status.text, /MCP client: neo-e2e/);
+    assert.match(status.text, /MCP client: kyte-e2e/);
   });
 
   it('opens a tab in the session group and navigates', async () => {
     const opened = await ok(mcp.client, 'tab_open', { url: `${srv.a}/index.html` });
-    assert.match(opened.text, /Opened tab \d+: Neo Test Shop/);
+    assert.match(opened.text, /Opened tab \d+: Kyte Test Shop/);
     const indexTab = Number(opened.text.match(/Opened tab (\d+)/)![1]);
     // The debugger was attached before the page loaded: its own load is on record, with no blank page in the history.
     assert.match((await ok(mcp.client, 'network_requests', { types: ['Document'] })).text, /GET 200 Document text\/html .*index\.html/);
     assert.match((await ok(mcp.client, 'page_info')).text, /Main document: HTTP 200/);
     assert.match((await ok(mcp.client, 'evaluate', { expression: 'history.length' })).text, /\b1\b/);
-    const failed = await call(mcp.client, 'tab_open', { url: 'http://neo-webmcp-does-not-exist.invalid/' });
+    const failed = await call(mcp.client, 'tab_open', { url: 'http://kyte-webmcp-does-not-exist.invalid/' });
     assert.ok(failed.isError, failed.text);
     assert.match(failed.text, /Opened tab \d+, but loading .* failed: net::ERR_NAME_NOT_RESOLVED/);
     await ok(mcp.client, 'tab_close', { tabIds: [Number(failed.text.match(/Opened tab (\d+)/)![1])] });
     await ok(mcp.client, 'tab_select', { tabId: indexTab });
     const list = await ok(mcp.client, 'tabs_list');
-    assert.match(list.text, /Neo Test Shop.*TARGET.*group "neo-e2e" \(agent\)/);
+    assert.match(list.text, /Kyte Test Shop.*TARGET.*group "kyte-e2e" \(agent\)/);
     const nav = await ok(mcp.client, 'navigate', { url: `${srv.a}/page2.html` });
     assert.match(nav.text, /page2\.html · title: Second page · HTTP 200/);
     const back = await ok(mcp.client, 'navigate', { action: 'back' });
     assert.match(back.text, /index\.html/);
-    const bad = await call(mcp.client, 'navigate', { url: 'http://neo-webmcp-does-not-exist.invalid/' });
+    const bad = await call(mcp.client, 'navigate', { url: 'http://kyte-webmcp-does-not-exist.invalid/' });
     assert.ok(bad.isError);
     assert.match(bad.text, /ERR_NAME_NOT_RESOLVED|failed/);
     // The error page left behind fires its load event late: this navigate must still wait for index.html itself
@@ -59,7 +59,7 @@ describe('core flow', () => {
 
   it('snapshots the accessibility tree across shadow DOM and cross-origin iframes', async () => {
     const snap = await ok(mcp.client, 'page_snapshot');
-    assert.match(snap.text, /heading "Neo Test Shop"/);
+    assert.match(snap.text, /heading "Kyte Test Shop"/);
     assert.match(snap.text, /textbox "Email" \[ref=e\d+\] \[required\]/);
     assert.match(snap.text, /button "Shadow button" \[ref=e\d+\]/);
     assert.match(snap.text, /button "Closed shadow button" \[ref=e\d+\]/);
@@ -174,7 +174,7 @@ describe('core flow', () => {
     assert.match(annotated.text, /interactive elements labelled/);
     assert.equal(annotated.images[0]!.mimeType, 'image/png');
     assert.equal((await ok(mcp.client, 'evaluate', { expression: 'document.body.outerHTML' })).text, domBefore.text, 'labels are drawn on the image only');
-    const el = await ok(mcp.client, 'find', { text: 'Neo Test Shop' });
+    const el = await ok(mcp.client, 'find', { text: 'Kyte Test Shop' });
     const elShot = await ok(mcp.client, 'screenshot', { ref: el.text.match(/\[ref=(e\d+)\]/)![1]! });
     assert.match(elShot.text, /Screenshot of the heading/);
     const saved = await ok(mcp.client, 'screenshot', { fullPage: true });
@@ -228,7 +228,7 @@ describe('core flow', () => {
     const r = await ok(mcp.client, 'click', { ref: refOf(snap.text, /button "Open popup"/) });
     assert.match(r.text, /Opened new tab \d+/);
     const list = await ok(mcp.client, 'tabs_list');
-    assert.equal((list.text.match(/group "neo-e2e"/g) ?? []).length >= 2, true, list.text);
+    assert.equal((list.text.match(/group "kyte-e2e"/g) ?? []).length >= 2, true, list.text);
   });
 
   it('acts on a background tab without slowing down', async () => {

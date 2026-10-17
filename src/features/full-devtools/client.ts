@@ -13,7 +13,7 @@ export interface FullCdpStatus {
 type EventListener = (method: string, params: Record<string, unknown>, sessionId?: string) => void;
 
 export const FULL_CDP_HELP =
-  'The full DevTools channel is not available. Either start the dedicated agent browser with "neo-webmcp chrome" (no prompts), or enable remote debugging once in your Chrome at chrome://inspect/#remote-debugging and click "Allow" when Chrome asks (once per Chrome start).';
+  'The full DevTools channel is not available. Either start the dedicated agent browser with "kyte-webmcp chrome" (no prompts), or enable remote debugging once in your Chrome at chrome://inspect/#remote-debugging and click "Allow" when Chrome asks (once per Chrome start).';
 
 /**
  * Bridge-side client of the broker. Every bridge shares the broker's single
@@ -65,7 +65,7 @@ export class FullCdpClient {
       }
     }
     if (!ws) {
-      this.#status = { state: 'unavailable', error: 'could not start the neo-webmcp broker' };
+      this.#status = { state: 'unavailable', error: 'could not start the kyte-webmcp broker' };
       return;
     }
     this.#ws = ws;
@@ -79,7 +79,7 @@ export class FullCdpClient {
       this.#pending.clear();
     });
     // The broker may have been started by another bridge: tell it where this bridge was told to look.
-    const hints: EndpointHints = { endpoint: process.env.NEO_WEBMCP_CDP_ENDPOINT, userDataDir: process.env.NEO_WEBMCP_CHROME_USER_DATA_DIR };
+    const hints: EndpointHints = { endpoint: process.env.KYTE_WEBMCP_CDP_ENDPOINT, userDataDir: process.env.KYTE_WEBMCP_CHROME_USER_DATA_DIR };
     const status = (await this.#call('Broker.connect', { ...hints })) as FullCdpStatus;
     this.#status = status;
   }

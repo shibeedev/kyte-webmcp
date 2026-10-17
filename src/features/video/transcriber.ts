@@ -16,7 +16,7 @@ export const WHISPER_MODELS = {
 export type WhisperSize = keyof typeof WHISPER_MODELS;
 
 export function modelCacheDir(): string {
-  return process.env.NEO_WEBMCP_MODEL_DIR ?? path.join(os.homedir(), '.cache', 'neo-webmcp', 'models');
+  return process.env.KYTE_WEBMCP_MODEL_DIR ?? path.join(os.homedir(), '.cache', 'kyte-webmcp', 'models');
 }
 
 type Transcriber = (audio: Float32Array, options: Record<string, unknown>) => Promise<{ text: string; chunks?: Array<{ timestamp: [number, number | null]; text: string }> }>;

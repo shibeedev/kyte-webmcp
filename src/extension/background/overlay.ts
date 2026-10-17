@@ -6,7 +6,7 @@ import { t } from '../i18n.ts';
 const IDLE_HIDE_MS = 4000;
 
 export interface OverlayMessage {
-  neo: 'overlay';
+  kyte: 'overlay';
   action: 'show' | 'hide' | 'suspend' | 'unsuspend' | 'remove';
   label?: string;
   stopLabel?: string;
@@ -37,7 +37,7 @@ export class Overlay {
       this.#timers.delete(tabId);
     });
     core.settings.onChange((s) => {
-      if (!s.overlay) for (const tabId of this.#injected) void this.#send(tabId, { neo: 'overlay', action: 'remove' });
+      if (!s.overlay) for (const tabId of this.#injected) void this.#send(tabId, { kyte: 'overlay', action: 'remove' });
     });
   }
 
@@ -58,7 +58,7 @@ export class Overlay {
 
   #message(session: Session, action: OverlayMessage['action']): OverlayMessage {
     return {
-      neo: 'overlay',
+      kyte: 'overlay',
       action,
       label: t('overlayLabel', session.name),
       stopLabel: t('stop'),
@@ -79,7 +79,7 @@ export class Overlay {
       this.#timers.set(
         tabId,
         setTimeout(() => {
-          if (!session.inflight.size) void this.#send(tabId, { neo: 'overlay', action: 'hide' });
+          if (!session.inflight.size) void this.#send(tabId, { kyte: 'overlay', action: 'hide' });
         }, IDLE_HIDE_MS),
       );
     }
@@ -89,14 +89,14 @@ export class Overlay {
   async withHidden<T>(tabId: number, capture: () => Promise<T>): Promise<T> {
     this.#suspended.set(tabId, (this.#suspended.get(tabId) ?? 0) + 1);
     const wasInjected = this.#injected.has(tabId);
-    if (wasInjected) await chrome.tabs.sendMessage(tabId, { neo: 'overlay', action: 'suspend' } satisfies OverlayMessage).catch(() => {});
+    if (wasInjected) await chrome.tabs.sendMessage(tabId, { kyte: 'overlay', action: 'suspend' } satisfies OverlayMessage).catch(() => {});
     try {
       return await capture();
     } finally {
       const n = (this.#suspended.get(tabId) ?? 1) - 1;
       if (n <= 0) {
         this.#suspended.delete(tabId);
-        if (wasInjected) await this.#send(tabId, { neo: 'overlay', action: 'unsuspend' });
+        if (wasInjected) await this.#send(tabId, { kyte: 'overlay', action: 'unsuspend' });
       } else this.#suspended.set(tabId, n);
     }
   }
@@ -109,7 +109,7 @@ export class Overlay {
 
   async remove(tabId: number): Promise<void> {
     clearTimeout(this.#timers.get(tabId));
-    if (this.#injected.has(tabId)) await this.#send(tabId, { neo: 'overlay', action: 'remove' });
+    if (this.#injected.has(tabId)) await this.#send(tabId, { kyte: 'overlay', action: 'remove' });
     this.#injected.delete(tabId);
   }
 }

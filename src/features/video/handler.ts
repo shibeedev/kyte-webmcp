@@ -334,7 +334,7 @@ async function captureByStreaming(core: Core, ctx: CallContext, media: Media, st
       started = await core.page.callOn<{ ok: boolean; error?: string }>(media.entry, startAudioCapture, [captureId], { userGesture: true });
     } catch (error) {
       if (/cross-origin/i.test(errorMessage(error))) {
-        throw new ToolError('This media is cross-origin without CORS, so Chrome forbids capturing its audio from the element. Use source="decode" (the extension downloads and decodes the file itself) or source="tab" after the user clicks the Neo WebMCP icon on this tab.');
+        throw new ToolError('This media is cross-origin without CORS, so Chrome forbids capturing its audio from the element. Use source="decode" (the extension downloads and decodes the file itself) or source="tab" after the user clicks the Kyte WebMCP icon on this tab.');
       }
       throw error;
     }
@@ -372,7 +372,7 @@ async function captureFromTab(core: Core, ctx: CallContext, media: Media, start:
   try {
     streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: ctx.tabId });
   } catch (error) {
-    throw new ToolError(`Tab audio capture is not permitted (${errorMessage(error)}). The user must click the Neo WebMCP toolbar icon while this tab is active to allow it.`);
+    throw new ToolError(`Tab audio capture is not permitted (${errorMessage(error)}). The user must click the Kyte WebMCP toolbar icon while this tab is active to allow it.`);
   }
   const state = await core.page.callOn<ReturnType<typeof playbackState>>(media.entry, playbackState);
   try {
@@ -433,7 +433,7 @@ async function transcribe(core: Core, ctx: CallContext, media: Media, opts: { st
 
 function silentError(t: Transcript, source: string): ToolError {
   return new ToolError(
-    `The captured audio is silent (level ${t.level.toFixed(5)}, ${t.seconds.toFixed(1)} s via ${source}), so there is nothing to transcribe. Likely causes: the segment has no sound, the media is cross-origin without CORS (capture then yields silence), or it is DRM-protected. Try source="decode" for direct files, or source="tab" after the user clicks the Neo WebMCP icon on this tab.`,
+    `The captured audio is silent (level ${t.level.toFixed(5)}, ${t.seconds.toFixed(1)} s via ${source}), so there is nothing to transcribe. Likely causes: the segment has no sound, the media is cross-origin without CORS (capture then yields silence), or it is DRM-protected. Try source="decode" for direct files, or source="tab" after the user clicks the Kyte WebMCP icon on this tab.`,
   );
 }
 
@@ -445,7 +445,7 @@ export const videoFeature: Feature = {
   name: 'video',
   setup(core) {
     core.cdp.on((tabId, sessionId, method, params) => {
-      if (method === 'Runtime.bindingCalled' && params.name === '__neoEmit') {
+      if (method === 'Runtime.bindingCalled' && params.name === '__kyteEmit') {
         try {
           const msg = JSON.parse(params.payload) as { captureId?: string; seq: number; data: string };
           if (msg.captureId) captureListeners.get(msg.captureId)?.(msg.seq, msg.data);

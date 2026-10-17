@@ -1,15 +1,15 @@
 {
   "extName": {
-    "message": "Neo WebMCP"
+    "message": "Kyte WebMCP Extension"
   },
   "extDescription": {
-    "message": "Cho AI agent (MCP client) điều khiển Chrome này một cách native: trang web, hiểu video, toàn bộ dữ liệu DevTools và tool WebMCP."
+    "message": "Cho AI agent (MCP client) điều khiển Chrome này một cách native: trang web, hiểu video, toàn bộ dữ liệu DevTools và tool W3C WebMCP."
   },
   "actionTitle": {
-    "message": "Neo WebMCP — đang chờ MCP client"
+    "message": "Kyte WebMCP — đang chờ MCP client"
   },
   "actionTitleConnected": {
-    "message": "Neo WebMCP — $1 phiên đang kết nối"
+    "message": "Kyte WebMCP — $1 phiên đang kết nối"
   },
   "overlayLabel": {
     "message": "$1 đang điều khiển tab này"

@@ -149,7 +149,7 @@ describe('impact on pages and the browser', () => {
         ua: navigator.userAgent,
         dark: matchMedia('(prefers-color-scheme: dark)').matches,
         status: await fetch('/api/echo').then((r) => r.status),
-        indicator: !!document.querySelector('neo-webmcp-indicator'),
+        indicator: !!document.querySelector('kyte-webmcp-indicator'),
       }));
       assert.notEqual(state.width, 412, 'device emulation removed');
       assert.doesNotMatch(state.ua, /Pixel 8/);
@@ -170,7 +170,7 @@ describe('impact on pages and the browser', () => {
       await ok(a.client, 'tab_open', { url: `${srv.a}/index.html` });
       await ok(b.client, 'tab_open', { url: `${srv.a}/page2.html` });
       const list = await ok(a.client, 'tabs_list');
-      assert.match(list.text, /Neo Test Shop.*group "agent-a"/);
+      assert.match(list.text, /Kyte Test Shop.*group "agent-a"/);
       assert.match(list.text, /Second page.*group "agent-b"/);
       await ok(a.client, 'network_mock', { action: 'add', urlPattern: '*/api/echo', block: true });
       const inB = await ok(b.client, 'evaluate', { expression: 'fetch("/api/echo").then(r => r.status, () => "blocked")' });
@@ -209,13 +209,13 @@ describe('impact on pages and the browser', () => {
       const started = Date.now();
       const r = await call(mcp.client, 'page_info', {}, 60_000);
       assert.ok(!r.isError, r.text);
-      assert.match(r.text, /Neo Test Shop/);
+      assert.match(r.text, /Kyte Test Shop/);
       t.diagnostic(`reconnected ${Date.now() - started} ms after the worker restarted`);
       assert.ok(Date.now() - started < 15_000, `reconnected in ${Date.now() - started} ms`);
       // The activity log from before the restart is still there, in the worker and in the side panel.
       const restarted = await extensionWorker(bh.browser);
       const log = await restarted.evaluate(async () => {
-        const core = (globalThis as any).neoCore;
+        const core = (globalThis as any).kyteCore;
         await core.activity.ready;
         return core.activity.list().map((e: { tool: string; status: string }) => `${e.tool}:${e.status}`);
       });
@@ -259,7 +259,7 @@ describe('impact on pages and the browser', () => {
       await (await extensionWorker(bh.browser)).close(); // the worker dies mid-command
       const r = await running;
       assert.ok(r.isError, r.text);
-      assert.match(r.text, /The Neo WebMCP extension disconnected while the command was running/);
+      assert.match(r.text, /The Kyte WebMCP extension disconnected while the command was running/);
       assert.ok(Date.now() - started < 10_000, `ended after ${Date.now() - started} ms instead of hanging for 20 s`);
     } finally {
       await mcp.close();
@@ -278,18 +278,18 @@ describe('impact on pages and the browser', () => {
       const fromPage = await page.evaluate(
         (p) =>
           new Promise<string>((resolve) => {
-            const ws = new WebSocket(`ws://127.0.0.1:${p}/neo-webmcp`);
+            const ws = new WebSocket(`ws://127.0.0.1:${p}/kyte-webmcp`);
             ws.onopen = () => resolve('open');
             ws.onerror = () => resolve('refused');
           }),
         port,
       );
       assert.equal(fromPage, 'refused', 'a web page cannot talk to the bridge');
-      const url = `ws://127.0.0.1:${port}/neo-webmcp`;
+      const url = `ws://127.0.0.1:${port}/kyte-webmcp`;
       assert.match(await wsAttempt(url, { Origin: 'http://localhost:3000' }), /^refused 401/, 'a foreign origin is refused');
       assert.match(await wsAttempt(url, { Origin: EXTENSION_ORIGIN, Host: `evil.example:${port}` }), /^refused 401/, 'a foreign Host header (DNS rebinding) is refused');
       const lan = lanAddress();
-      if (lan) assert.match(await wsAttempt(`ws://${lan}:${port}/neo-webmcp`, { Origin: EXTENSION_ORIGIN }), /^refused ECONNREFUSED/, 'not reachable from the network');
+      if (lan) assert.match(await wsAttempt(`ws://${lan}:${port}/kyte-webmcp`, { Origin: EXTENSION_ORIGIN }), /^refused ECONNREFUSED/, 'not reachable from the network');
       const log = mcp.stderr.join('');
       assert.match(log, /rejected connection from origin=http:\/\/localhost:\d+ /, 'the bridge itself refused the page');
       assert.match(log, new RegExp(`rejected connection from origin=chrome-extension://\\S+ host=evil\\.example:${port}`));
