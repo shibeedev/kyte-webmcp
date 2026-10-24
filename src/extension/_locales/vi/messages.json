@@ -172,5 +172,47 @@
   },
   "dtSent": {
     "message": "Đã gửi"
+  },
+  "sectionLan": {
+    "message": "Điều khiển từ máy khác (LAN)"
+  },
+  "settingLan": {
+    "message": "Cho phép máy trong mạng LAN kết nối"
+  },
+  "lanOff": {
+    "message": "Chỉ MCP client trên máy này kết nối được."
+  },
+  "lanStarting": {
+    "message": "Đang khởi động…"
+  },
+  "lanOn": {
+    "message": "Đang bật · cổng $1"
+  },
+  "lanNotInstalledShort": {
+    "message": "Máy này chưa cài thành phần LAN."
+  },
+  "lanNotInstalled": {
+    "message": "Chạy lệnh này một lần trên máy này để đăng ký thành phần LAN với Chrome. Sau đó công tắc tự khởi động nó:"
+  },
+  "lanAddress": {
+    "message": "Địa chỉ của máy này"
+  },
+  "lanNoAddress": {
+    "message": "<IP-của-máy-này>"
+  },
+  "lanClaudeCode": {
+    "message": "Trên máy kia: Claude Code"
+  },
+  "lanJson": {
+    "message": "Trên máy kia: MCP client khác (JSON)"
+  },
+  "lanNewToken": {
+    "message": "Đổi mã truy cập"
+  },
+  "lanNewTokenNote": {
+    "message": "Ngắt mọi máy đang dùng mã hiện tại."
+  },
+  "lanWarning": {
+    "message": "Ai trong mạng có mã này đều điều khiển được Chrome này như agent trên máy, kể cả đọc và ghi file trên máy này. Kết nối không mã hóa: chỉ bật trên mạng bạn tin cậy. Nếu Windows hỏi, hãy cho phép Node.js trên mạng riêng tư (Private)."
   }
 }

@@ -4,8 +4,10 @@
  * Everything coming from agents or pages is rendered with textContent.
  */
 import { localize, t } from '../i18n.ts';
+import { LAN_PATH } from '../../shared/constants.ts';
 import type { ActivityEntry } from '../background/activity.ts';
 import type { SessionView } from '../background/core.ts';
+import type { LanView } from '../background/lan.ts';
 import type { SettingsData } from '../background/settings.ts';
 
 interface WebmcpTool {
@@ -22,6 +24,7 @@ interface State {
   sessions: SessionView[];
   activity: ActivityEntry[];
   settings: SettingsData;
+  lan: LanView;
   data: { webmcp?: Record<string, WebmcpTool[]> };
 }
 
@@ -31,6 +34,8 @@ let state: State | null = null;
 let activeTabId: number | null = null;
 let cliPath = '';
 let filter = '';
+/** The address of this computer the LAN commands use (several when it has more than one network adapter). */
+let lanAddress = '';
 const openEntries = new Set<number>();
 let port: chrome.runtime.Port | null = null;
 
@@ -101,6 +106,7 @@ function renderSessions(): void {
       if (s.targetTabId !== null && title === undefined) void loadTitle(s.targetTabId);
       const target = s.targetTabId === null ? t('targetFollows') : title ? `"${title.length > 40 ? `${title.slice(0, 39)}…` : title}"` : t('targetTab', String(s.targetTabId));
       const badge = s.paused ? h('span', { class: 'badge paused' }, t('statePaused')) : s.busy ? h('span', { class: 'badge busy' }, t('stateBusy')) : h('span', { class: 'badge' }, t('stateIdle'));
+      const lan = s.remote ? h('span', { class: 'badge lan' }, 'LAN') : null;
       const button = h('button', { class: `btn small ${s.paused ? 'resume' : 'danger'}`, type: 'button' }, s.paused ? t('resume') : t('stop'));
       button.addEventListener('click', () => send({ type: s.paused ? 'resume' : 'pause', sessionId: s.id }));
       const chip = h('span', { class: 'chip' });
@@ -109,7 +115,7 @@ function renderSessions(): void {
         'li',
         { class: 'session', 'data-session': s.id },
         chip,
-        h('div', {}, h('div', { class: 'name' }, s.name, s.clientVersion ? h('span', { class: 'ver' }, s.clientVersion) : null), h('div', { class: 'meta' }, h('span', {}, `${t('targetLabel')}: ${target}`), h('span', {}, `${t('callsLabel')}: ${s.callCount}`), badge)),
+        h('div', {}, h('div', { class: 'name' }, s.name, s.clientVersion ? h('span', { class: 'ver' }, s.clientVersion) : null), h('div', { class: 'meta' }, h('span', {}, `${t('targetLabel')}: ${target}`), h('span', {}, `${t('callsLabel')}: ${s.callCount}`), badge, lan)),
         button,
       );
     }),
@@ -188,6 +194,27 @@ function renderSettings(): void {
   $<HTMLSelectElement>('set-whisper').value = state.settings.whisperModel;
 }
 
+function renderLan(): void {
+  if (!state) return;
+  const { lan } = state;
+  $<HTMLInputElement>('set-lan').checked = state.settings.lan;
+  const sub = $('lan-state');
+  sub.className = `sub ${lan.state}`;
+  sub.textContent =
+    lan.state === 'on' ? t('lanOn', String(lan.port)) : lan.state === 'starting' ? t('lanStarting') : lan.state === 'error' ? (lan.notInstalled ? t('lanNotInstalledShort') : lan.error) : t('lanOff');
+  $('lan-install').hidden = !(state.settings.lan && lan.notInstalled);
+  $('cmd-lan-install').textContent = `node "${cliPath || '<path-to-kyte-webmcp>/dist/bridge/cli.mjs'}" install`;
+  $('lan-ready').hidden = !(state.settings.lan && lan.state === 'on');
+  if (lan.state !== 'on') return;
+  if (!lan.addresses.includes(lanAddress)) lanAddress = lan.addresses[0] ?? '';
+  const select = $<HTMLSelectElement>('lan-address');
+  select.replaceChildren(...lan.addresses.map((a) => h('option', { value: a }, a)));
+  select.value = lanAddress;
+  const url = `http://${lanAddress || t('lanNoAddress')}:${lan.port}${LAN_PATH}`;
+  $('cmd-lan-claude').textContent = `claude mcp add --transport http kyte-webmcp-lan ${url} --header "Authorization: Bearer ${lan.token}"`;
+  $('cmd-lan-json').textContent = JSON.stringify({ mcpServers: { 'kyte-webmcp-lan': { type: 'http', url, headers: { Authorization: `Bearer ${lan.token}` } } } }, null, 2);
+}
+
 function renderSetup(): void {
   if (!state) return;
   const path = cliPath || '<path-to-kyte-webmcp>/dist/bridge/cli.mjs';
@@ -203,6 +230,7 @@ function renderAll(): void {
   renderActivity();
   renderWebmcp();
   renderSettings();
+  renderLan();
   renderSetup();
   requestAnimationFrame(() => document.body.classList.remove('loading'));
 }
@@ -214,6 +242,12 @@ $('filter').addEventListener('input', (e) => {
 });
 $('set-overlay').addEventListener('change', (e) => send({ type: 'settings', patch: { overlay: (e.target as HTMLInputElement).checked } }));
 $('set-whisper').addEventListener('change', (e) => send({ type: 'settings', patch: { whisperModel: (e.target as HTMLSelectElement).value } }));
+$('set-lan').addEventListener('change', (e) => send({ type: 'settings', patch: { lan: (e.target as HTMLInputElement).checked } }));
+$('lan-address').addEventListener('change', (e) => {
+  lanAddress = (e.target as HTMLSelectElement).value;
+  renderLan();
+});
+$('lan-new-token').addEventListener('click', () => send({ type: 'lanNewToken' }));
 $('setup').addEventListener('toggle', () => ($('setup').dataset.touched = '1'));
 for (const button of document.querySelectorAll<HTMLButtonElement>('[data-copy]')) {
   button.addEventListener('click', async () => {
@@ -238,11 +272,13 @@ chrome.windows.onFocusChanged.addListener(() => void refreshActiveTab());
 void chrome.storage.local.get('bridgeCliPath').then((v) => {
   cliPath = (v.bridgeCliPath as string) ?? '';
   renderSetup();
+  renderLan();
 });
 chrome.storage.onChanged.addListener((changes) => {
   if (changes.bridgeCliPath) {
     cliPath = changes.bridgeCliPath.newValue as string;
     renderSetup();
+    renderLan();
   }
 });
 connect();

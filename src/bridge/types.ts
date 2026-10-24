@@ -7,6 +7,8 @@ export interface BridgeContext {
   outputDir: string;
   version: string;
   fullCdp: FullCdpClient;
+  /** Address of the LAN client when this bridge serves one (MCP over HTTP); empty for a stdio bridge. */
+  remote: string;
 }
 
 export type BridgeToolHandler = (args: Record<string, unknown>, ctx: BridgeContext, signal: AbortSignal) => Promise<ToolResult>;

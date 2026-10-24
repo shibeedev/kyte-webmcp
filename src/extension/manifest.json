@@ -28,7 +28,8 @@
     "alarms",
     "clipboardRead",
     "clipboardWrite",
-    "contentSettings"
+    "contentSettings",
+    "nativeMessaging"
   ],
   "host_permissions": ["<all_urls>"],
   "content_security_policy": {

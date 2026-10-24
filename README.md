@@ -56,6 +56,7 @@ The agent then sees `site_add_todo` and `site_search_products` next to Kyte WebM
 - **All of DevTools.** Console, Network (details, bodies, WebSocket frames, HAR, mocking and blocking), Core Web Vitals, Performance traces with analysis, Coverage, Elements (box model, CSS rules, event listeners), Application (cookies, storage, IndexedDB, Cache Storage, service workers), Issues, Memory (heap snapshots), Media, device, network and CPU emulation, and `cdp_send` for any DevTools Protocol command.
 - **Two-way DevTools.** A "Kyte WebMCP" panel inside DevTools: select an element or a request and send it to the agent with a note; the agent can reveal an element or a source line in your DevTools.
 - **Many agents at once.** Each MCP client is its own session with its own colored tab group; sessions never mix.
+- **Control from another computer.** Turn on **Allow connections from the LAN** in the side panel and an MCP client on another computer of your network drives this Chrome over HTTP, with an access token.
 - **You stay in control.** The agent works fully automatically, but a controlled tab shows a border and a **Stop** button, and the side panel offers Stop and Resume per session or for all, plus a live activity log.
 
 The extension UI follows Chrome's language (English or Vietnamese, English by default) and the macOS System Settings look, in light and dark mode.
@@ -64,7 +65,7 @@ The extension UI follows Chrome's language (English or Vietnamese, English by de
 
 - Desktop Chrome 125 or newer; tested on Chrome 155. WebMCP needs Chrome 149 or newer (see [WebMCP, first class](#webmcp-first-class)).
 - Node.js 22.18 or newer.
-- An MCP client that supports stdio servers.
+- An MCP client that supports stdio servers. A client on another computer of the LAN needs HTTP (Streamable HTTP) support instead, and nothing else installed.
 
 ## Installation
 
@@ -109,6 +110,37 @@ After the first connection, the **Connect an MCP client** section of the side pa
 Start your MCP client: the side panel changes from *Waiting for an MCP client…* to *Connected sessions: 1* and lists the new session. Try asking the agent: *"Use browser_status, then take a screenshot of the current tab."*
 
 The extension finds bridges on 127.0.0.1 ports 17831–17840. Each MCP client takes one port, so up to 10 clients can be connected at once.
+
+## Control from another computer (LAN)
+
+An agent on another computer of your network can drive the Chrome on this computer. Computer A runs Chrome with Kyte WebMCP; computer B runs the MCP client.
+
+**On computer A (once):**
+
+```bash
+node dist/bridge/cli.mjs install
+```
+
+This registers the Kyte WebMCP LAN component with Chrome for your user (a Chrome native messaging host; on Windows a key under `HKCU\Software\Google\Chrome\NativeMessagingHosts`). If you updated Kyte WebMCP, reload the extension in `chrome://extensions` first. `node dist/bridge/cli.mjs uninstall` removes the registration.
+
+**On computer A, each time you want it:** open the side panel and turn on **Allow connections from the LAN**. Chrome starts the LAN endpoint on port 17850 (`http://<address-of-A>:17850/mcp`) and the side panel shows the address, an access token, and ready-to-copy settings for computer B. Turning the switch off closes the port and disconnects every LAN client; MCP clients on computer A are not affected. The switch is remembered, so the endpoint opens again when Chrome starts.
+
+**On computer B:** paste the command from the side panel, for example in Claude Code:
+
+```bash
+claude mcp add --transport http kyte-webmcp-lan http://192.168.1.20:17850/mcp --header "Authorization: Bearer <token>"
+```
+
+or the JSON shown under it for other clients. Computer B does not need Node.js or Kyte WebMCP.
+
+Each LAN client is a session like any other, named `<client> @ <address of B>` with a **LAN** badge, with its own tab group and its own Stop button. Whisper, the full DevTools channel and saved files run on computer A, so file paths in results (and `savePath`, `upload_file` paths) refer to computer A's disk; the agent is told so.
+
+**Before you turn it on:**
+
+- Anyone on your network who has the token controls this Chrome like a local agent, including reading and writing files on computer A. **New access token** in the side panel disconnects everyone using the old one.
+- The connection is plain HTTP (not encrypted): use it on networks you trust only.
+- Only devices with a local network address (private, link-local or loopback) are accepted, and requests from web pages are refused.
+- On Windows, the first time the endpoint starts, Windows may ask whether Node.js may communicate on networks: allow **Private networks**. Kyte WebMCP never changes your firewall. If the network is set to *Public* in Windows, other computers cannot reach the endpoint.
 
 ## Full DevTools channel
 
@@ -262,7 +294,7 @@ Every tool that acts on a tab accepts an optional `tabId`; by default it uses th
 
 - The agent works **fully automatically**, on any tab, without asking before each action. Only connect MCP clients you trust.
 - A controlled tab shows a blue border and a "… is controlling this tab" label with a **Stop** button; the side panel has **Stop all** / **Resume all** and Stop / Resume per session. Stop cancels the running command and pauses the session (the border turns orange) until you click Resume. The border can be turned off in the side panel settings.
-- The bridge listens on 127.0.0.1 only and accepts connections from the Kyte WebMCP extension only.
+- The bridge listens on 127.0.0.1 only and accepts connections from the Kyte WebMCP extension only. Nothing listens on the network unless you turn on **Allow connections from the LAN** (see [Control from another computer](#control-from-another-computer-lan)).
 - Audio for transcription is processed by Whisper on your machine and is not sent anywhere.
 - The activity log hides the values of arguments whose names contain password, secret, token, otp, pin, cvv or card. The log is kept for the Chrome session (not written to disk) and is cleared when Chrome closes.
 - Content that comes from web pages (WebMCP tool results included) is marked as untrusted, and the agent is told never to follow instructions found in it.
@@ -277,6 +309,7 @@ Bridge command line:
 |---|---|
 | `kyte-webmcp [--port <n>] [--output-dir <folder>]` | Runs the bridge on stdio (what MCP clients start) |
 | `kyte-webmcp chrome [--chrome-path <exe>] [--profile-dir <folder>] [--url <address>]` | Starts Chrome with a dedicated agent profile (full DevTools channel, no prompts) |
+| `kyte-webmcp install` / `uninstall` | Registers / removes the LAN component (Chrome native messaging host) for your user |
 | `kyte-webmcp --help` / `--version` | Help / version |
 
 `kyte-webmcp` above is the same as `node dist/bridge/cli.mjs`.
@@ -289,7 +322,7 @@ Environment variables:
 | `KYTE_WEBMCP_MODEL_DIR` | `~/.cache/kyte-webmcp/models` | Where Whisper models are stored |
 | `KYTE_WEBMCP_CDP_ENDPOINT` | — | A specific remote debugging endpoint (`ws://…`) for the full DevTools channel |
 | `KYTE_WEBMCP_CHROME_USER_DATA_DIR` | — | A Chrome profile folder to look for a remote debugging endpoint in |
-| `KYTE_WEBMCP_STATE_DIR` | `~/.kyte-webmcp` | Where the broker writes its connection info |
+| `KYTE_WEBMCP_STATE_DIR` | `~/.kyte-webmcp` | Where the broker writes its connection info and `install` puts the LAN component's files |
 | `KYTE_WEBMCP_NO_DEFAULT_PROFILES` | — | `1` = never look at normal Chrome profiles (used by the tests) |
 
 ## Development and testing
@@ -302,7 +335,7 @@ npm run test:e2e     # build the test build into dist-test/, then run end-to-end
 npm test             # build + unit + e2e
 ```
 
-End-to-end tests use Chrome for Testing 155 with temporary profiles and never touch your Chrome, your Downloads folder or your clipboard. The test build (`dist-test/`) is identical to the real one except that its bridge uses ports 17931–17940, so even while your own Chrome runs Kyte WebMCP and your MCP client is open, the tests and your real setup never connect to each other. Install the test browser once:
+End-to-end tests use Chrome for Testing 155 with temporary profiles and never touch your Chrome, your Downloads folder or your clipboard. The test build (`dist-test/`) is identical to the real one except that its bridge uses ports 17931–17940, its LAN endpoint port 17950 and its LAN component is registered as `com.kyte.webmcp.test`, so even while your own Chrome runs Kyte WebMCP and your MCP client is open, the tests and your real setup never connect to each other. The `lan` suite registers that test component in your user's registry (Windows) for its run and removes it afterwards. Install the test browser once:
 
 ```bash
 npx @puppeteer/browsers install chrome@155.0.8059.41 --path .cache/chrome
@@ -321,3 +354,4 @@ Code structure and the rules for adding features: [architecture.md](architecture
 - Capturing a whole tab's audio needs you to click the Kyte WebMCP icon on that tab first (a Chrome rule). The tests stand in for that click with Chromium's `--allowlisted-extension-id` switch.
 - Tabs you opened before the agent touched them: requests and console messages from their earlier load are not available (like opening DevTools after a page has loaded); the tools remind the agent to reload when needed. Tabs the agent opens with `tab_open` are recorded from the start.
 - WebMCP is still an experimental Chrome feature and needs a flag (or a site in the origin trial).
+- LAN: when the extension is reloaded or updated (or Chrome restarts), the LAN endpoint restarts and LAN clients have to reconnect. A LAN client that goes quiet without keeping its event stream open is released from the browser after about a minute and picks up again on its next call; after a day it has to reconnect. `install` was tested on Windows; the macOS and Linux registration follows Chrome's documented folders but has not been tested.

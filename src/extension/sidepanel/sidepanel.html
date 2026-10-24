@@ -75,6 +75,35 @@
         </div>
       </section>
 
+      <section class="section" aria-labelledby="h-lan">
+        <h2 id="h-lan" class="section-title" data-i18n="sectionLan"></h2>
+        <div class="group">
+          <label class="row switch">
+            <span class="stack"><span data-i18n="settingLan"></span><span id="lan-state" class="sub"></span></span>
+            <input id="set-lan" type="checkbox" role="switch" />
+          </label>
+          <div id="lan-install" class="lan-body" hidden>
+            <p class="muted" data-i18n="lanNotInstalled"></p>
+            <div class="code"><code id="cmd-lan-install"></code><button class="btn small" type="button" data-copy="cmd-lan-install" data-i18n="copy"></button></div>
+          </div>
+          <div id="lan-ready" class="lan-body" hidden>
+            <label class="field">
+              <span data-i18n="lanAddress"></span>
+              <span class="popup"><select id="lan-address"></select></span>
+            </label>
+            <h3 data-i18n="lanClaudeCode"></h3>
+            <div class="code"><code id="cmd-lan-claude"></code><button class="btn small" type="button" data-copy="cmd-lan-claude" data-i18n="copy"></button></div>
+            <h3 data-i18n="lanJson"></h3>
+            <div class="code"><pre id="cmd-lan-json"></pre><button class="btn small" type="button" data-copy="cmd-lan-json" data-i18n="copy"></button></div>
+            <div class="field start">
+              <button id="lan-new-token" class="btn small" type="button" data-i18n="lanNewToken"></button>
+              <span class="muted small" data-i18n="lanNewTokenNote"></span>
+            </div>
+            <p class="muted small" data-i18n="lanWarning"></p>
+          </div>
+        </div>
+      </section>
+
       <details id="setup" class="group setup">
         <summary><h2 data-i18n="sectionSetup"></h2><span class="chevron" aria-hidden="true"></span></summary>
         <div class="setup-body">

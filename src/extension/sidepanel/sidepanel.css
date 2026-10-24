@@ -173,6 +173,18 @@ h3 { margin: 12px 0 6px; font-size: 12px; font-weight: 600; }
   background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M5 6.5 8 3.8l3 2.7M5 9.5l3 2.7 3-2.7' fill='none' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 14px no-repeat;
 }
 
+/* Remote control (LAN): a switch with a status line, then what the other computer needs. */
+.stack { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.sub { font-size: 11px; color: var(--secondary); }
+.sub:empty { display: none; }
+.sub.on { color: var(--green); }
+.sub.error { color: var(--red); }
+.badge.lan { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+.lan-body { padding: 2px 12px 12px; border-top: 0.5px solid var(--separator); }
+.lan-body p { margin: 10px 0; }
+.field { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
+.field.start { justify-content: flex-start; }
+
 /* "Connect an MCP client" disclosure. */
 .setup summary { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; cursor: pointer; list-style: none; }
 .setup summary::-webkit-details-marker { display: none; }

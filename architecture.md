@@ -4,7 +4,7 @@ Tài liệu này mô tả cách code được tổ chức và các luật phải
 
 ## 1. Các tiến trình và đường nối
 
-Kyte WebMCP chạy trong năm môi trường. Mỗi môi trường có một "core" riêng; tính năng (feature) cắm vào core qua registry.
+Kyte WebMCP chạy trong sáu môi trường. Mỗi môi trường có một "core" riêng; tính năng (feature) cắm vào core qua registry.
 
 ```mermaid
 flowchart LR
@@ -24,8 +24,15 @@ flowchart LR
     end
     BR[Broker — Node, một tiến trình dùng chung]
     CH[(Chrome: tab, iframe, worker)]
+    subgraph Lan["LAN host — Node, Chrome khởi chạy khi bật LAN"]
+      GW[LanGateway: mỗi phiên HTTP một bridge]
+    end
+    RC["MCP client ở máy khác"]
 
     C <-- "stdio (MCP)" --> MS
+    RC <-- "HTTP :17850/mcp (MCP Streamable HTTP, token)" --> GW
+    SW -- "native messaging (start/listening/scan)" --> GW
+    GW <-- "WebSocket 127.0.0.1:17831–17840 (như bridge thường)" --> SW
     MS --> HUB
     HUB <-- "WebSocket 127.0.0.1:17831–17840" --> SW
     SW -- "svc: gọi service" --> SV
@@ -45,6 +52,7 @@ flowchart LR
 | UI | `src/extension/sidepanel/`, `src/extension/devtools/` | Side panel (trạng thái, phiên, nhật ký, cài đặt) và panel "Kyte WebMCP" trong DevTools. |
 | Trong trang | `src/extension/content/overlay.ts` + các `page.ts` của feature | Overlay báo hiệu agent đang điều khiển; hàm chạy trong isolated world của trang. |
 | Broker (Node, detached) | `src/features/full-devtools/broker.ts` | Giữ **một** kết nối remote-debugging tới Chrome, chia sẻ cho mọi bridge. |
+| LAN host (Node, native messaging) | `src/bridge/lan.ts` | Chỉ chạy khi người dùng bật "Cho phép kết nối LAN": Chrome khởi chạy nó qua native messaging, nó mở MCP Streamable HTTP cho máy khác và tạo cho mỗi phiên HTTP một bridge trên dải cổng loopback (mục 5.1). |
 
 ## 2. Kiến trúc feature-based, fork-isolated
 
@@ -128,7 +136,8 @@ Danh sách feature hiện có:
 | `geometry.ts`, `ax.ts`, `image.ts` | — | Tọa độ/hit-test (bỏ qua overlay của chính mình), cây accessibility qua mọi frame, xử lý ảnh trong service worker (scale, đánh nhãn Set-of-Mark, ghép lưới). |
 | `core.sessions` + `sessions.ts` | — | Mỗi MCP client = một `Session`: tab đích, nhóm tab màu riêng, lời gọi đang chạy, gọi service phía bridge, ghi/stream file qua bridge. |
 | `core.dispatcher` | `dispatcher.ts` | Định tuyến lời gọi: chọn tab đích, khóa theo tab với tool `exclusive`, ngân sách thời gian, hủy, tạm dừng/Stop, ghi nhật ký hoạt động. |
-| `core.connections` | `connections.ts` | Quét cổng 17831–17840 mỗi 2 giây (có backoff), handshake, ping 20 giây. |
+| `core.connections` | `connections.ts` | Quét cổng 17831–17840 mỗi 2 giây (có backoff), handshake, ping 20 giây. Bridge phục vụ client LAN (`welcome.remote`) chỉ được nhận khi công tắc LAN đang bật. |
+| `core.lan` | `lan.ts` | Công tắc LAN: giữ cổng native messaging tới LAN host khi bật (cổng mở cũng giữ service worker sống), gửi mã truy cập, nhận trạng thái/địa chỉ, ngắt phiên LAN khi tắt; alarm 30 giây thử lại khi host chưa cài hoặc đã thoát. |
 | `core.overlay` | `overlay.ts` | Tiêm overlay khi có hoạt động, tự ẩn sau 4 giây rảnh, tạm giấu khi chụp ảnh. |
 | `core.ui` | `ui-hub.ts` | Kết nối side panel và DevTools (theo tab), hộp thư "gửi cho agent", lệnh reveal. |
 | `core.activity`, `core.settings`, `core.offscreen` | — | Nhật ký (che giá trị nhạy cảm; lưu trong `chrome.storage.session` để còn sau khi Chrome dừng service worker lúc rảnh), cài đặt người dùng, cầu nối tới offscreen document. |
@@ -139,7 +148,9 @@ Service worker MV3 có thể bị Chrome dừng. `index.ts` đánh thức nó b�
 
 | File | Trách nhiệm |
 |---|---|
-| `cli.ts` | Điểm vào: chế độ bridge (mặc định), `chrome`, `broker`; tắt khi stdin đóng hoặc nhận SIGINT/SIGTERM. |
+| `cli.ts` | Điểm vào: chế độ bridge (mặc định), `chrome`, `broker`, `install`/`uninstall` (đăng ký native messaging host), `lan-host`; tắt khi stdin đóng hoặc nhận SIGINT/SIGTERM. `createBridge()` dựng một bridge (hub + MCP server) và được dùng cho cả stdio lẫn từng phiên LAN. |
+| `lan.ts` | LAN host: `LanGateway` (HTTP, lọc địa chỉ nội bộ, chặn request có `Origin`, bearer token, phiên Streamable HTTP, cất/khôi phục phiên im lặng) và `runLanHost()` (vòng native messaging). |
+| `native-host.ts` | Ghi manifest + launcher của native messaging host (Windows: registry HKCU; macOS/Linux: thư mục `NativeMessagingHosts` của Chrome), đóng/mở khung tin native messaging. |
 | `mcp-server.ts` | `Server` cấp thấp của MCP SDK: `tools/list` (tool tĩnh + `site_*` động, có `listChanged`), kiểm tham số theo schema, `instructions`, prompts. |
 | `hub.ts` | WebSocket server chờ extension: lấy cổng trống đầu tiên trong dải, chỉ nhận origin của extension và Host loopback, gọi/hủy tool, phục vụ `svc`. |
 | `files.ts` | Thư mục output (mặc định `~/.kyte-webmcp/output`), service `file.write/open/append/close`. |
@@ -175,6 +186,38 @@ sequenceDiagram
 - Extension gửi `page_tools {tabId, tools}` khi danh sách WebMCP của tab đích thay đổi; bridge đổi tên an toàn (`site_` + tên, tối đa 64 ký tự, tránh trùng tool tĩnh) và gửi `notifications/tools/list_changed`.
 - Hủy từ client (`notifications/cancelled`) thành `cancel {id}` tới extension; handler nhận `signal` đã abort.
 - Kết quả lớn (HAR, trace, PDF, heap snapshot, ảnh lưu file) được extension stream sang bridge và ghi vào thư mục output; agent nhận đường dẫn.
+- `welcome.remote` (tùy chọn) là địa chỉ của client LAN mà bridge đó phục vụ; extension đặt tên phiên `<client> @ <địa chỉ>`, gắn nhãn LAN và từ chối bridge đó khi công tắc LAN tắt.
+
+### 5.1 Kết nối từ máy khác trong LAN
+
+Extension MV3 không mở được cổng lắng nghe, và từ Chrome 142 (Local Network Access) extension bị coi là origin public nên không nên tự gọi tới IP nội bộ. Vì vậy kênh extension ↔ bridge vẫn chỉ ở loopback; phần mở ra LAN là một tiến trình Node trên máy có Chrome (LAN host) do Chrome khởi chạy qua native messaging.
+
+```mermaid
+sequenceDiagram
+    participant U as Side panel
+    participant E as Extension (core.lan + connections)
+    participant H as LAN host (Node)
+    participant R as MCP client máy khác
+    U->>E: settings {lan: true}
+    E->>H: connectNative("com.kyte.webmcp") + {t: "start", token}
+    H->>H: listen :17850 (mọi interface)
+    H->>E: {t: "listening", port, addresses}
+    R->>H: POST /mcp initialize (Authorization: Bearer token)
+    H->>H: địa chỉ nội bộ? không có Origin? token đúng?
+    H->>H: createBridge(remote) → hub nghe 127.0.0.1:1783x
+    H->>E: {t: "scan"} (quét ngay, bỏ backoff)
+    E->>H: WebSocket tới hub (như bridge thường)
+    H->>E: welcome {remote: "192.168.x.y"}
+    R->>H: tools/call … → hub.call → extension
+    U->>E: settings {lan: false}
+    E->>H: port.disconnect() → stdin đóng → host đóng mọi phiên và thoát
+```
+
+- **Cài đặt một lần**: `kyte-webmcp install` ghi launcher (`.cmd`/`.sh` gọi `node cli.mjs lan-host`) và manifest (`allowed_origins` = extension) vào `~/.kyte-webmcp/native-host/` (hoặc `KYTE_WEBMCP_STATE_DIR`), rồi đăng ký với Chrome (Windows: `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.kyte.webmcp`, Chrome for Testing đọc cùng khóa; macOS/Linux: thư mục `NativeMessagingHosts` của Chrome). `kyte-webmcp uninstall` gỡ cả hai.
+- **Bảo vệ**: chỉ nhận địa chỉ loopback/private/link-local (CGNAT 100.64/10 và địa chỉ public bị từ chối); request có header `Origin` (trình duyệt) bị 403; bearer token so sánh thời gian hằng; token mới ngắt mọi phiên cũ. HTTP không mã hóa.
+- **Vòng đời phiên**: mỗi phiên Streamable HTTP có ctx/hub/MCP server riêng (giống một bridge stdio). `DELETE` kết thúc ngay. Phiên không còn request hay SSE stream nào mở trong 60 giây thì được *cất*: hub đóng (extension kết thúc phiên, dọn tab/overlay) nhưng phiên MCP giữ nguyên; request kế tiếp mở lại hub. Phiên cất quá 24 giờ thì bị quên (client nhận 404 và phải kết nối lại). Client dùng MCP SDK luôn giữ SSE stream nên không bị cất khi còn chạy.
+- **Bridge LAN chạy trên máy có Chrome**: file output, Whisper, kênh DevTools đầy đủ đều ở máy đó; `instructions` và `browser_status` báo cho agent biết đường dẫn file thuộc máy có Chrome.
+- Service worker khởi động lại (reload extension, cập nhật) thì cổng native đóng, host thoát; `core.lan.sync()` lúc khởi động mở lại host mới, client LAN phải kết nối lại.
 
 ## 6. Kênh DevTools đầy đủ
 
@@ -225,16 +268,17 @@ flowchart TD
 
 Manifest được chép kèm version lấy từ `package.json`; icon được vẽ bằng `scripts/icons.mjs` (không cần file ảnh nguồn).
 
-`node scripts/build.mjs --test` build cùng mã nguồn vào `dist-test/`, chỉ khác `PORT_BASE` được dời +100 (17931–17940) lúc build; script dừng với lỗi nếu không tìm thấy dòng hằng số để dời. Test e2e chỉ dùng bản này, nên extension và bridge của test không bao giờ gặp extension trong Chrome thật của người dùng hay bridge mà MCP client của họ đang chạy.
+`node scripts/build.mjs --test` build cùng mã nguồn vào `dist-test/`, chỉ khác `PORT_BASE` và `LAN_PORT` được dời +100 (17931–17940, 17950) và `NATIVE_HOST` đổi thành `com.kyte.webmcp.test` lúc build; script dừng với lỗi nếu không tìm thấy dòng hằng số để sửa. Test e2e chỉ dùng bản này, nên extension, bridge và LAN host của test không bao giờ gặp extension trong Chrome thật của người dùng, bridge mà MCP client của họ đang chạy hay LAN host thật.
 
 ## 9. Kiểm thử
 
 | Lớp | Vị trí | Chạy |
 |---|---|---|
-| Unit (logic thuần: parser phụ đề, kiểm tham số, đặt tên tool, phân tích trace, tóm tắt heap…) | `tests/unit/` | `npm run test:unit` |
+| Unit (logic thuần: parser phụ đề, kiểm tham số, đặt tên tool, phân tích trace, tóm tắt heap, lọc địa chỉ LAN, khung native messaging, kiểm soát truy cập HTTP của LAN host…) | `tests/unit/` | `npm run test:unit` |
 | E2E (Chrome for Testing + extension thật + bridge thật qua MCP client) | `tests/e2e/*.test.ts` | `npm run test:e2e` |
 
-- `tests/helpers/harness.ts` khởi chạy Chrome với profile tạm, nạp `dist-test/extension`, mở MCP client nối `dist-test/bridge/cli.mjs` qua stdio (số cổng trong test là 1783x, harness dời sang 1793x). Biến môi trường dành cho test: `KYTE_WEBMCP_OUTPUT_DIR`, `KYTE_WEBMCP_STATE_DIR` (đưa mọi file vào `tests/.artifacts`), `KYTE_WEBMCP_NO_DEFAULT_PROFILES=1` (broker không bao giờ chạm Chrome thật của người dùng), `KYTE_TEST_CHROME` (đường dẫn Chrome khác).
+- `tests/helpers/harness.ts` khởi chạy Chrome với profile tạm, nạp `dist-test/extension`, mở MCP client nối `dist-test/bridge/cli.mjs` qua stdio (số cổng trong test là 1783x, harness dời sang 1793x). Biến môi trường dành cho test: `KYTE_WEBMCP_OUTPUT_DIR`, `KYTE_WEBMCP_STATE_DIR` (đưa mọi file vào `tests/.artifacts`), `KYTE_WEBMCP_NO_DEFAULT_PROFILES=1` (broker không bao giờ chạm Chrome thật của người dùng), `KYTE_TEST_CHROME` (đường dẫn Chrome khác). Ba biến cô lập đầu (`TEST_ENV`) cũng được truyền cho Chrome, vì LAN host do Chrome khởi chạy cũng tạo bridge.
+- Bộ `lan` chạy `dist-test/bridge/cli.mjs install|uninstall` (ghi rồi xóa khóa registry của `com.kyte.webmcp.test`), bật/tắt công tắc trên side panel thật, nối MCP client HTTP của SDK qua địa chỉ LAN của máy, và thử: chưa cài, tự mở sau khi cài, token sai/đổi token, request từ trang web, phiên LAN cạnh phiên local, DELETE, client im lặng bị cất rồi khôi phục (~70 giây), service worker khởi động lại, tắt công tắc, bridge LAN bị extension từ chối khi công tắc tắt, giao diện tiếng Việt.
 - `tests/helpers/server.ts` dựng hai origin (`localhost` và `127.0.0.1`) để thử iframe khác origin, có Range, WebSocket echo, API lỗi/chậm.
 - `tests/fixtures/site/` chứa trang mẫu: form, shadow DOM, iframe, dialog, kéo thả, video có phụ đề và giọng nói, video khác origin chặn tải trực tiếp, trang chỉ cho phát khi có cử chỉ người dùng, video mã hóa Clear Key (đen và đỏ), trang WebMCP, trang storage/perf.
 - Bộ `impact` đo ảnh hưởng lên trình duyệt: trang agent không đụng tới giữ y như khi không cài extension; phiên kết thúc thì dọn sạch (giả lập thiết bị, mock mạng, overlay, debugger) mà không đóng tab; hai phiên chạy song song không lẫn nhau; tự phục hồi khi service worker khởi động lại và khi bridge khởi động lại; tốn rất ít tài nguyên khi rảnh.
@@ -249,4 +293,5 @@ Manifest được chép kèm version lấy từ `package.json`; icon được v�
 - `captureStream()` bị chặn với video khác origin không có CORS; khi đó lấy khung hình bằng chụp vùng màn hình và lấy âm thanh bằng cách tải lại file qua extension.
 - Canvas không bao giờ đọc được khung hình mã hóa (EME/DRM, kể cả Clear Key): khung hình đen từ canvas của media có DRM sẽ được chụp lại từ màn hình; chỉ khi màn hình cũng đen mới báo "bị DRM chặn".
 - WebMCP cần Chrome 149+ với `chrome://flags/#enable-webmcp-testing` hoặc site thuộc origin trial.
+- Extension không mở được cổng lắng nghe và (từ Chrome 142, Local Network Access) không nên gọi thẳng tới IP nội bộ; kết nối LAN vì vậy đi qua LAN host chạy native messaging (mục 5.1). Lần đầu LAN host nghe trên mọi interface, Windows có thể hỏi cho phép Node.js qua tường lửa; code không tự sửa tường lửa.
 - Service worker MV3 có thể bị dừng khi rảnh; kết nối được nối lại tự động (mục 3).

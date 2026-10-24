@@ -29,7 +29,7 @@ export interface PageTool {
 }
 
 export type BridgeToExt =
-  | { t: 'welcome'; bridgeVersion: string; pid: number; port: number; client: ClientInfo | null; cliPath: string }
+  | { t: 'welcome'; bridgeVersion: string; pid: number; port: number; client: ClientInfo | null; cliPath: string; remote?: string }
   | { t: 'client'; client: ClientInfo }
   | { t: 'call'; id: number; tool: string; args: Record<string, unknown> }
   | { t: 'cancel'; id: number }
@@ -43,6 +43,18 @@ export type ExtToBridge =
   | { t: 'svc'; id: number; name: string; args: Record<string, unknown> }
   | { t: 'page_tools'; tabId: number | null; tools: PageTool[] }
   | { t: 'ping' };
+
+/**
+ * Native messaging between the extension and the LAN host, which Chrome starts
+ * while the user allows LAN connections. Each LAN client then gets its own
+ * bridge on the loopback port range; `welcome.remote` carries its address.
+ */
+export type ExtToLanHost = { t: 'start'; token: string };
+
+export type LanHostToExt =
+  | { t: 'listening'; port: number; addresses: string[] }
+  | { t: 'error'; message: string }
+  | { t: 'scan' };
 
 /** Close codes the bridge uses so the extension can react without parsing reasons. */
 export const CLOSE_BUSY = 4001;

@@ -38,7 +38,7 @@ Sản phẩm dành cho lập trình viên và người dùng chuyên sâu dùng 
 
 # 2. Implementation
 ## 2.1. Tổng quan sản phẩm (ngắn gọn)
-Người dùng cài extension vào Chrome và khai báo bridge cục bộ trong MCP client. Mỗi khi MCP client khởi động, bridge chạy theo và extension tự kết nối vào. Agent gọi tool; extension thực hiện ngay trên tab Chrome (đọc trang, thao tác, xem video, đọc dữ liệu DevTools, gọi tool WebMCP của trang) rồi trả kết quả dạng văn bản, hình ảnh hoặc file. Trong lúc đó người dùng theo dõi qua side panel và chỉ báo trên trang, và có thể dừng agent bất kỳ lúc nào.
+Người dùng cài extension vào Chrome và khai báo bridge cục bộ trong MCP client. Mỗi khi MCP client khởi động, bridge chạy theo và extension tự kết nối vào. Người dùng cũng có thể bật cho phép MCP client trên máy khác cùng mạng LAN điều khiển Chrome này. Agent gọi tool; extension thực hiện ngay trên tab Chrome (đọc trang, thao tác, xem video, đọc dữ liệu DevTools, gọi tool WebMCP của trang) rồi trả kết quả dạng văn bản, hình ảnh hoặc file. Trong lúc đó người dùng theo dõi qua side panel và chỉ báo trên trang, và có thể dừng agent bất kỳ lúc nào.
 
 ### Tổng quan flow
 ```mermaid
@@ -56,7 +56,7 @@ flowchart LR
 <!-- AI: đây là danh sách module -->
 | Module | Mô tả | Trạng thái |
 |--------|-------|------------|
-| ket-noi | Kết nối MCP client với Chrome qua bridge cục bộ; phiên làm việc của từng client; prompt mẫu cho các workflow | done |
+| ket-noi | Kết nối MCP client với Chrome qua bridge cục bộ, hoặc từ máy khác trong mạng LAN khi người dùng cho phép; phiên làm việc của từng client; prompt mẫu cho các workflow | done |
 | dieu-khien | Tab, cửa sổ, điều hướng; đọc hiểu trang; thao tác chuột/phím/form; chụp màn hình; chạy JavaScript; tải xuống, lịch sử, bookmark, clipboard, in PDF | done |
 | video | Xem và hiểu video trên trang: liệt kê, điều khiển phát, khung hình, storyboard, phụ đề, chép lời, xem một đoạn, thông tin media; quay tab thành video (để sau) | thực hiện |
 | devtools | Đọc và điều khiển dữ liệu DevTools: Console, Network, Performance, Elements, Application, giả lập, Issues, Memory, lệnh DevTools Protocol thô | done |
@@ -96,6 +96,7 @@ flowchart TD
 ```
 - **Lưu ý**: <!-- constraint cứng — không được bỏ qua -->
   - Kênh giữa bridge và extension chỉ lắng nghe trên địa chỉ loopback của máy, không mở ra mạng.
+  - MCP client trên máy khác chỉ kết nối được khi người dùng bật cho phép kết nối LAN (feature 2.2.31); khi tắt, không có gì của Kyte WebMCP mở ra mạng.
   - Bridge từ chối mọi kết nối không đến từ extension Kyte WebMCP, kể cả kết nối từ trang web đang mở trong trình duyệt.
   - Mất kết nối giữa chừng thì lệnh đang chạy phải kết thúc bằng lỗi rõ ràng, không treo agent.
   - Danh sách tool agent nhìn thấy không phụ thuộc việc extension đã kết nối hay chưa.
@@ -376,11 +377,11 @@ flowchart TD
 ### 2.2.25. Feature 25: Side panel
 - **Trạng thái**: done
 - **Module**: giao-dien
-- **Mô tả**: Bấm vào biểu tượng extension để mở side panel. Side panel hiển thị trạng thái kết nối (đang chờ MCP client, hoặc số phiên đang kết nối) và hướng dẫn cấu hình MCP client có nút sao chép; danh sách phiên (tên client, tab group, tab đích, số lệnh đã chạy) với nút Dừng/Tiếp tục cho từng phiên và nút Dừng tất cả; nhật ký hoạt động trực tiếp của các lệnh agent (thời gian, tên lệnh, tóm tắt tham số, thời lượng, thành công/lỗi), có lọc và xem chi tiết; tool WebMCP của tab hiện tại; cài đặt (bật/tắt chỉ báo trên trang, chọn model chép lời).
+- **Mô tả**: Bấm vào biểu tượng extension để mở side panel. Side panel hiển thị trạng thái kết nối (đang chờ MCP client, hoặc số phiên đang kết nối) và hướng dẫn cấu hình MCP client có nút sao chép; danh sách phiên (tên client, tab group, tab đích, số lệnh đã chạy) với nút Dừng/Tiếp tục cho từng phiên và nút Dừng tất cả; nhật ký hoạt động trực tiếp của các lệnh agent (thời gian, tên lệnh, tóm tắt tham số, thời lượng, thành công/lỗi), có lọc và xem chi tiết; tool WebMCP của tab hiện tại; cài đặt (bật/tắt chỉ báo trên trang, chọn model chép lời); công tắc cho phép máy khác trong mạng LAN kết nối kèm thông tin kết nối cho máy kia (feature 2.2.31).
 - **Giao diện**:
   - Phong cách giống phần Cài đặt hệ thống (System Settings) của macOS, theo chế độ sáng/tối của máy: các mục là nhóm bo góc có tiêu đề phía trên, công tắc và nút kiểu macOS. Panel trong DevTools và chỉ báo trên trang dùng cùng phong cách; icon extension là chữ K trên nền xanh bo góc kiểu icon ứng dụng macOS.
   - Phần đầu: trạng thái kết nối và nút Dừng tất cả.
-  - Các mục: Phiên, Nhật ký hoạt động, WebMCP của tab hiện tại, Cài đặt, Hướng dẫn kết nối.
+  - Các mục: Phiên, Nhật ký hoạt động, WebMCP của tab hiện tại, Cài đặt, Điều khiển từ máy khác (LAN), Hướng dẫn kết nối.
 - **Lưu ý**: <!-- constraint cứng — không được bỏ qua -->
   - Trạng thái trên side panel tự cập nhật, người dùng không phải tải lại side panel.
   - Nhật ký hoạt động không mất khi Chrome tự dừng rồi khởi động lại extension lúc rảnh; nhật ký chỉ mất khi đóng Chrome.
@@ -465,17 +466,66 @@ flowchart TD
 
 ---
 
+### 2.2.31. Feature 31: Điều khiển Chrome từ máy khác trong mạng LAN
+- **Trạng thái**: done
+- **Module**: ket-noi
+- **Mô tả**: Người dùng cho phép MCP client chạy trên máy khác cùng mạng LAN điều khiển Chrome của mình (Chrome đang bật extension Kyte WebMCP) bằng một công tắc "Cho phép máy trong mạng LAN kết nối" trong side panel. Mặc định công tắc tắt: chỉ MCP client trên cùng máy kết nối được. Khi bật, máy có Chrome mở một điểm kết nối MCP qua HTTP trong mạng LAN. Máy kia không cần cài Kyte WebMCP, chỉ cần một MCP client hỗ trợ kết nối HTTP; người dùng thêm điểm kết nối bằng lệnh cho Claude Code hoặc cấu hình JSON mà side panel hiển thị sẵn, có nút sao chép, gồm địa chỉ của máy có Chrome và mã truy cập. Máy có Chrome có nhiều địa chỉ mạng thì người dùng chọn địa chỉ trong side panel và lệnh tự cập nhật theo.
+
+  Mã truy cập được tạo ngẫu nhiên ở lần bật đầu tiên, được giữ qua các lần khởi động lại, và người dùng đổi được bất kỳ lúc nào; đổi mã thì mọi máy đang dùng mã cũ bị ngắt và chỉ mã mới kết nối được. Mỗi MCP client từ máy khác là một phiên như client trên máy (feature 2.2.1): có tab group riêng, Dừng/Tiếp tục được, có trong nhật ký hoạt động; tên phiên kèm địa chỉ của máy kết nối và có nhãn LAN. Phần việc phía bridge (chép lời Whisper, kênh DevTools đầy đủ, ghi file) chạy trên máy có Chrome, nên đường dẫn file trong kết quả và trong tham số là đường dẫn trên máy có Chrome; agent được báo điều này khi kết nối và trong tool tình trạng kết nối.
+
+  Điểm kết nối LAN cần một thành phần cài một lần trên máy có Chrome, bằng một lệnh của Kyte WebMCP đăng ký thành phần này với Chrome cho người dùng hiện tại; từ đó công tắc tự khởi động và tắt nó. Bật công tắc khi chưa cài thì side panel báo chưa cài và hiện lệnh cài có nút sao chép; cài xong thì điểm kết nối tự mở trong khoảng nửa phút, không cần bật lại công tắc. Công tắc được ghi nhớ: Chrome hoặc extension khởi động lại thì điểm kết nối tự mở lại, còn MCP client ở máy khác phải kết nối lại.
+
+  Client ở máy khác tự kết thúc phiên thì phiên được gỡ khỏi trình duyệt ngay. Client ngừng hoạt động mà không báo (bị tắt đột ngột, mất mạng) thì sau khoảng một phút không còn yêu cầu hay kênh nhận thông báo nào đang mở, phiên của nó trên trình duyệt được gỡ như khi phiên kết thúc; client đó gọi lại thì phiên được mở lại tự động. Sau một ngày không hoạt động, client phải kết nối lại từ đầu.
+- **Giao diện**:
+  - Mục "Điều khiển từ máy khác (LAN)" trong side panel: công tắc kèm một dòng trạng thái (chỉ máy này kết nối được, đang khởi động, đang bật kèm cổng, chưa cài, hoặc lỗi).
+  - Khi đang bật: chọn địa chỉ của máy này, lệnh cho Claude Code trên máy kia, cấu hình JSON cho MCP client khác, nút Đổi mã truy cập kèm chú thích là đổi mã sẽ ngắt các máy đang kết nối, và cảnh báo: ai trong mạng có mã đều điều khiển được Chrome này như agent trên máy, kể cả đọc và ghi file trên máy; kết nối không mã hóa nên chỉ bật trên mạng tin cậy; trên Windows, cho phép Node.js qua tường lửa ở mạng riêng tư nếu được hỏi.
+  - Khi chưa cài: hướng dẫn và lệnh cài có nút sao chép.
+  - Danh sách phiên: phiên từ máy khác có nhãn LAN và tên kèm địa chỉ của máy đó.
+- **Flow**:
+
+```mermaid
+flowchart TD
+    A["Người dùng bật công tắc cho phép LAN"] --> B{"Thành phần LAN đã cài trên máy?"}
+    B -->|Chưa| C["Side panel báo chưa cài và hiện lệnh cài"]
+    C --> D["Người dùng chạy lệnh cài một lần"]
+    D --> E
+    B -->|Rồi| E["Mở điểm kết nối LAN; side panel hiện địa chỉ, mã truy cập và lệnh cho máy kia"]
+    E --> F["MCP client ở máy khác kết nối"]
+    F --> G{"Đến từ mạng nội bộ, không phải trang web, đúng mã truy cập?"}
+    G -->|Không| H["Từ chối"]
+    G -->|Có| I["Phiên mới như client trên máy, tên kèm địa chỉ máy kia"]
+    I --> J{"Người dùng làm gì?"}
+    J -->|Tắt công tắc| K["Đóng điểm kết nối LAN, kết thúc mọi phiên từ máy khác; phiên trên máy giữ nguyên"]
+    J -->|Đổi mã| L["Ngắt mọi máy dùng mã cũ; chỉ mã mới kết nối được"]
+    J -->|Không làm gì| M{"Client còn hoạt động?"}
+    M -->|Có| I
+    M -->|Im lặng khoảng một phút| N["Gỡ phiên khỏi trình duyệt; mở lại khi client gọi lại"]
+```
+- **Lưu ý**: <!-- constraint cứng — không được bỏ qua -->
+  - Mặc định công tắc tắt; khi tắt, không có cổng nào của Kyte WebMCP mở ra mạng.
+  - Tắt công tắc thì điểm kết nối LAN đóng hẳn và mọi phiên từ máy khác kết thúc ngay; phiên của MCP client trên cùng máy không bị ảnh hưởng.
+  - Chỉ nhận kết nối từ địa chỉ thuộc mạng nội bộ (địa chỉ riêng, link-local, loopback); địa chỉ công cộng bị từ chối.
+  - Mọi yêu cầu phải kèm đúng mã truy cập; thiếu hoặc sai mã thì bị từ chối.
+  - Yêu cầu đến từ trang web trong trình duyệt bị từ chối, kể cả khi có mã đúng.
+  - Extension chỉ nhận phiên từ máy khác khi công tắc đang bật, kể cả khi có tiến trình khác tự mở điểm kết nối LAN.
+  - Đổi mã truy cập thì mọi phiên dùng mã cũ kết thúc và mã cũ không dùng được nữa.
+  - Kênh giữa extension và bridge vẫn chỉ ở loopback; chỉ điểm kết nối MCP mở ra mạng LAN.
+  - Hệ thống không tự đổi cấu hình tường lửa của máy.
+
+---
+
 # 3. Tech stack
 - TypeScript cho cả extension và bridge.
 - Extension Chrome Manifest V3, dùng Chrome DevTools Protocol qua quyền debugger của extension. Tính năng WebMCP cần Chrome có WebMCP (origin trial từ Chrome 149, hoặc bật cờ WebMCP).
 - Bridge chạy trên Node.js, dùng MCP TypeScript SDK bản ổn định (spec MCP 2025-11-25); nói chuyện với MCP client qua stdio, với extension qua WebSocket trên loopback.
+- Kết nối từ máy khác trong LAN: MCP Streamable HTTP; extension khởi động và dừng điểm kết nối LAN qua native messaging của Chrome.
 - Chép lời: Whisper chạy local bằng transformers.js (ONNX Runtime) trong bridge.
 - Build bằng esbuild. Kiểm thử bằng Node test runner và Puppeteer điều khiển Chrome for Testing có nạp extension.
 - Không dùng dịch vụ cloud nào; chỉ tải model Whisper một lần từ HuggingFace.
 
 # 4. Yêu cầu kiểm thử trước bàn giao
 Theo yêu cầu của người dùng: test toàn luồng, test giao diện, test ảnh hưởng trước khi bàn giao.
-- **Toàn luồng**: MCP client thật gọi qua bridge tới extension trên Chrome thật, cho mọi nhóm tool, trên các trang kiểm thử có đủ tình huống (form, iframe khác origin, shadow DOM, hộp thoại, upload, video có/không phụ đề, tool WebMCP, lỗi console, request mạng).
+- **Toàn luồng**: MCP client thật gọi qua bridge tới extension trên Chrome thật, cho mọi nhóm tool, trên các trang kiểm thử có đủ tình huống (form, iframe khác origin, shadow DOM, hộp thoại, upload, video có/không phụ đề, tool WebMCP, lỗi console, request mạng). Kết nối từ máy khác trong LAN: bật/tắt bằng công tắc, chưa cài thành phần LAN, mã truy cập đúng/sai/đổi mã, từ chối trang web, client im lặng rồi gọi lại, khởi động lại extension.
 - **Giao diện**: side panel, chỉ báo trên trang và panel DevTools hiển thị đúng ở các trạng thái (chưa kết nối, đã kết nối, đang chạy lệnh, tạm dừng) và thao tác được, bằng cả tiếng Anh và tiếng Việt.
 - **Ảnh hưởng**: extension không làm thay đổi hành vi, giao diện hay hiệu năng của trang mà agent chưa đụng tới; sau khi phiên kết thúc mọi thứ được gỡ sạch; nhiều phiên cùng lúc không lẫn vào nhau; DevTools của người dùng vẫn dùng bình thường khi agent đang gắn debugger.
 - **Lưu ý**:

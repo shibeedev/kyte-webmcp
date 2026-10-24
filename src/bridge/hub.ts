@@ -25,6 +25,8 @@ export class ExtensionHub extends EventEmitter {
   client: ClientInfo | null = null;
   readonly #version: string;
   readonly #cliPath: string;
+  /** Address of the LAN client this bridge serves; empty for a local (stdio) bridge. */
+  readonly #remote: string;
   readonly #services: Record<string, ServiceHandler>;
   #server: Server | null = null;
   #wss: WebSocketServer | null = null;
@@ -33,10 +35,11 @@ export class ExtensionHub extends EventEmitter {
   #nextId = 1;
   readonly #pending = new Map<number, PendingCall>();
 
-  constructor(version: string, services: Record<string, ServiceHandler>, cliPath = '') {
+  constructor(version: string, services: Record<string, ServiceHandler>, cliPath = '', remote = '') {
     super();
     this.#version = version;
     this.#cliPath = cliPath;
+    this.#remote = remote;
     this.#services = services;
   }
 
@@ -94,7 +97,7 @@ export class ExtensionHub extends EventEmitter {
       log('extension disconnected');
       this.emit('disconnected');
     });
-    this.#send({ t: 'welcome', bridgeVersion: this.#version, pid: process.pid, port: this.port, client: this.client, cliPath: this.#cliPath });
+    this.#send({ t: 'welcome', bridgeVersion: this.#version, pid: process.pid, port: this.port, client: this.client, cliPath: this.#cliPath, ...(this.#remote ? { remote: this.#remote } : {}) });
   }
 
   #onMessage(ws: WebSocket, raw: string): void {

@@ -2,6 +2,7 @@ import { Activity } from './activity.ts';
 import { Cdp } from './cdp.ts';
 import { Connections } from './connections.ts';
 import { Dispatcher } from './dispatcher.ts';
+import { Lan } from './lan.ts';
 import { Offscreen } from './offscreen.ts';
 import { Overlay } from './overlay.ts';
 import { PageWorld } from './page-world.ts';
@@ -19,6 +20,8 @@ export interface SessionView {
   name: string;
   clientVersion: string;
   port: number;
+  /** Address of the LAN client, null for a client on this machine. */
+  remote: string | null;
   paused: boolean;
   targetTabId: number | null;
   callCount: number;
@@ -41,6 +44,7 @@ export class Core {
   readonly ui: UiHub;
   readonly overlay: Overlay;
   readonly connections: Connections;
+  readonly lan: Lan;
   readonly dispatcher: Dispatcher;
   readonly #sessionEndHooks: Array<(session: Session) => Promise<void> | void> = [];
   readonly #sessionStartHooks: Array<(session: Session) => void> = [];
@@ -51,6 +55,8 @@ export class Core {
     this.ui = new UiHub(this);
     this.overlay = new Overlay(this);
     this.connections = new Connections(this);
+    this.lan = new Lan(this);
+    this.settings.onChange(() => void this.lan.sync());
     this.dispatcher = new Dispatcher(this);
     for (const feature of features) {
       feature.setup?.(this);
@@ -74,6 +80,7 @@ export class Core {
   async start(): Promise<void> {
     await this.settings.ready;
     this.connections.start();
+    void this.lan.sync();
     this.#updateBadge();
   }
 
@@ -145,6 +152,7 @@ export class Core {
       name: s.name,
       clientVersion: s.client?.version ?? '',
       port: s.port,
+      remote: s.remote,
       paused: s.paused,
       targetTabId: s.targetTabId,
       callCount: s.callCount,

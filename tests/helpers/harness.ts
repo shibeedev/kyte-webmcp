@@ -20,6 +20,16 @@ export const bridgePort = (port: number) => port + TEST_PORT_SHIFT;
 export const CHROME = process.env.KYTE_TEST_CHROME ?? path.join(ROOT, '.cache', 'chrome', 'chrome', 'win64-155.0.8059.41', 'chrome-win64', 'chrome.exe');
 export const ARTIFACTS = path.join(ROOT, 'tests', '.artifacts');
 
+/**
+ * Isolation for every test bridge: output and state stay in tests/.artifacts and the broker never looks at the
+ * user's real Chrome profiles. Chrome gets it too, because the LAN host it starts runs bridges.
+ */
+export const TEST_ENV = {
+  KYTE_WEBMCP_OUTPUT_DIR: path.join(ARTIFACTS, 'output'),
+  KYTE_WEBMCP_STATE_DIR: path.join(ARTIFACTS, 'state'),
+  KYTE_WEBMCP_NO_DEFAULT_PROFILES: '1',
+};
+
 export interface BrowserHandle {
   browser: Browser;
   userDataDir: string;
@@ -41,6 +51,7 @@ export async function launchBrowser(opts: { headless?: boolean; args?: string[];
     pipe: true,
     enableExtensions: opts.extensions === false ? false : [EXT_DIR],
     userDataDir,
+    env: { ...process.env, ...TEST_ENV },
     defaultViewport: null,
     // Puppeteer mutes headless tabs; tab audio capture needs their sound.
     ...(opts.unmuted ? { ignoreDefaultArgs: ['--mute-audio'] } : {}),
@@ -85,14 +96,7 @@ export async function startClient(port: number, opts: { env?: Record<string, str
   const transport = new StdioClientTransport({
     command: process.execPath,
     args: [CLI, '--port', String(bridgePort(port))],
-    env: {
-      ...(process.env as Record<string, string>),
-      KYTE_WEBMCP_OUTPUT_DIR: path.join(ARTIFACTS, 'output'),
-      // Isolation: the test broker keeps its own state and never looks at the user's real Chrome profiles.
-      KYTE_WEBMCP_STATE_DIR: path.join(ARTIFACTS, 'state'),
-      KYTE_WEBMCP_NO_DEFAULT_PROFILES: '1',
-      ...(opts.env ?? {}),
-    },
+    env: { ...(process.env as Record<string, string>), ...TEST_ENV, ...(opts.env ?? {}) },
     stderr: 'pipe',
   });
   const stderr: string[] = [];

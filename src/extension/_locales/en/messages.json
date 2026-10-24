@@ -172,5 +172,47 @@
   },
   "dtSent": {
     "message": "Sent"
+  },
+  "sectionLan": {
+    "message": "Remote control (LAN)"
+  },
+  "settingLan": {
+    "message": "Allow connections from the LAN"
+  },
+  "lanOff": {
+    "message": "Only MCP clients on this computer can connect."
+  },
+  "lanStarting": {
+    "message": "Starting…"
+  },
+  "lanOn": {
+    "message": "On · port $1"
+  },
+  "lanNotInstalledShort": {
+    "message": "The LAN component is not installed on this computer."
+  },
+  "lanNotInstalled": {
+    "message": "Run this once on this computer to register the LAN component with Chrome. The switch then starts it by itself:"
+  },
+  "lanAddress": {
+    "message": "Address of this computer"
+  },
+  "lanNoAddress": {
+    "message": "<IP-of-this-computer>"
+  },
+  "lanClaudeCode": {
+    "message": "On the other computer: Claude Code"
+  },
+  "lanJson": {
+    "message": "On the other computer: other MCP clients (JSON)"
+  },
+  "lanNewToken": {
+    "message": "New access token"
+  },
+  "lanNewTokenNote": {
+    "message": "Disconnects every computer using the current one."
+  },
+  "lanWarning": {
+    "message": "Anyone on your network who has this token controls this Chrome like a local agent, including reading and writing files on this computer. The connection is not encrypted: turn this on only on networks you trust. If Windows asks, allow Node.js on private networks."
   }
 }

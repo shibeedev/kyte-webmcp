@@ -7,6 +7,8 @@ interface Socket {
   ws: WebSocket;
   opened: boolean;
   session: Session | null;
+  /** Closed by us: a LAN bridge while LAN connections are off. */
+  rejected: boolean;
 }
 
 /**
@@ -40,12 +42,23 @@ export class Connections {
     return [...this.#sockets.values()].filter((s) => s.session).length;
   }
 
-  scan(): void {
+  /** `force` skips the retry back-off (the LAN host just opened a bridge). */
+  scan(force = false): void {
+    if (force) this.#retryAt.clear();
     const now = Date.now();
     for (let port = PORT_BASE; port < PORT_BASE + PORT_COUNT; port++) {
       if (this.#sockets.has(port)) continue;
       if ((this.#retryAt.get(port) ?? 0) > now) continue;
       this.#connect(port);
+    }
+  }
+
+  /** Ends every LAN session (LAN connections were turned off or the LAN host stopped). */
+  closeRemote(): void {
+    for (const socket of this.#sockets.values()) {
+      if (!socket.session?.remote) continue;
+      socket.rejected = true;
+      socket.ws.close();
     }
   }
 
@@ -60,7 +73,7 @@ export class Connections {
     } catch {
       return;
     }
-    const socket: Socket = { ws, opened: false, session: null };
+    const socket: Socket = { ws, opened: false, session: null, rejected: false };
     this.#sockets.set(port, socket);
     ws.onopen = () => {
       socket.opened = true;
@@ -79,7 +92,7 @@ export class Connections {
         void this.#core.endSession(session, 'the MCP client disconnected');
       }
       let delay: number;
-      if (event.code === CLOSE_BUSY) delay = 30_000;
+      if (event.code === CLOSE_BUSY || socket.rejected) delay = 30_000;
       else if (!socket.opened) {
         const n = (this.#failures.get(port) ?? 0) + 1;
         this.#failures.set(port, n);
@@ -98,7 +111,12 @@ export class Connections {
     }
     switch (msg.t) {
       case 'welcome': {
-        const session = new Session(port, this.#sessionIndex++, (m) => this.#send(socket, m));
+        if (msg.remote && !this.#core.settings.get().lan) {
+          socket.rejected = true;
+          socket.ws.close();
+          break;
+        }
+        const session = new Session(port, this.#sessionIndex++, (m) => this.#send(socket, m), msg.remote ?? null);
         session.client = msg.client;
         session.bridgeVersion = msg.bridgeVersion;
         // Remembered so the side panel can show the exact command for adding more MCP clients.

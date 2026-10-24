@@ -3,9 +3,11 @@ export interface SettingsData {
   overlay: boolean;
   /** Whisper model size used when a tool does not choose one. */
   whisperModel: 'tiny' | 'base' | 'small';
+  /** Let MCP clients on other machines of the LAN connect (off by default). */
+  lan: boolean;
 }
 
-const DEFAULTS: SettingsData = { overlay: true, whisperModel: 'base' };
+const DEFAULTS: SettingsData = { overlay: true, whisperModel: 'base', lan: false };
 
 export class Settings {
   #data: SettingsData = { ...DEFAULTS };
@@ -29,6 +31,7 @@ export class Settings {
     const next = { ...this.#data };
     if (typeof patch.overlay === 'boolean') next.overlay = patch.overlay;
     if (patch.whisperModel && ['tiny', 'base', 'small'].includes(patch.whisperModel)) next.whisperModel = patch.whisperModel;
+    if (typeof patch.lan === 'boolean') next.lan = patch.lan;
     this.#data = next;
     await chrome.storage.local.set({ settings: next });
     for (const l of this.#listeners) l(next);

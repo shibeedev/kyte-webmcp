@@ -1,6 +1,7 @@
 // Builds the extension (dist/extension, load it unpacked) and the bridge (dist/bridge/cli.mjs).
-// --test builds the same code into dist-test/ with the bridge port range moved up by 100, so the
-// e2e tests never meet the extension in the user's own Chrome or the user's running bridges.
+// --test builds the same code into dist-test/ with the bridge port range and the LAN port moved up by 100
+// and its own native messaging host name, so the e2e tests never meet the extension in the user's own
+// Chrome, the user's running bridges or the user's LAN host.
 import { build } from 'esbuild';
 import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -17,15 +18,26 @@ const pkg = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
 await rm(outDir, { recursive: true, force: true });
 await mkdir(path.join(extOut, 'icons'), { recursive: true });
 
-/** Test build only: shifts PORT_BASE in src/shared/constants.ts (and fails loudly if that line ever changes). */
+/**
+ * Test build only: shifts PORT_BASE and LAN_PORT and renames the native messaging host in
+ * src/shared/constants.ts (and fails loudly if one of those lines ever changes).
+ */
 const testPorts = {
   name: 'test-ports',
   setup(b) {
     b.onLoad({ filter: /[\\/]shared[\\/]constants\.ts$/ }, async (args) => {
-      const code = await readFile(args.path, 'utf8');
-      const shifted = code.replace(/export const PORT_BASE = (\d+);/, (_m, n) => `export const PORT_BASE = ${Number(n) + 100};`);
-      if (shifted === code) throw new Error('test build: PORT_BASE not found in constants.ts');
-      return { contents: shifted, loader: 'ts' };
+      let code = await readFile(args.path, 'utf8');
+      const edits = [
+        [/export const PORT_BASE = (\d+);/, (_m, n) => `export const PORT_BASE = ${Number(n) + 100};`],
+        [/export const LAN_PORT = (\d+);/, (_m, n) => `export const LAN_PORT = ${Number(n) + 100};`],
+        [/export const NATIVE_HOST = '([a-z0-9_.]+)';/, (_m, name) => `export const NATIVE_HOST = '${name}.test';`],
+      ];
+      for (const [pattern, replace] of edits) {
+        const next = code.replace(pattern, replace);
+        if (next === code) throw new Error(`test build: ${pattern} not found in constants.ts`);
+        code = next;
+      }
+      return { contents: code, loader: 'ts' };
     });
   },
 };

@@ -11,9 +11,12 @@ chrome.runtime.onInstalled.addListener(() => {
 void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
 
 // Wake up periodically while no bridge is connected so a newly started MCP client is found quickly.
+// The same tick retries the LAN host when LAN connections are on but it is not running (e.g. not installed yet).
 chrome.alarms.create('kyte-webmcp-scan', { periodInMinutes: 0.5 });
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === 'kyte-webmcp-scan') core.connections.scan();
+  if (alarm.name !== 'kyte-webmcp-scan') return;
+  core.connections.scan();
+  void core.lan.sync();
 });
 // Ordinary browsing events also wake a stopped worker, so a new MCP client is found within seconds.
 chrome.tabs.onActivated.addListener(() => core.connections.scan());

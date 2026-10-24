@@ -61,6 +61,7 @@ export class UiHub {
       sessions: core.sessionList(),
       activity: core.activity.list().slice(-200),
       settings: core.settings.get(),
+      lan: core.lan.view(),
       data: Object.fromEntries(this.#panelData),
     };
   }
@@ -106,6 +107,9 @@ export class UiHub {
           break;
         case 'settings':
           void core.settings.update(msg.patch ?? {}).then(() => this.refresh());
+          break;
+        case 'lanNewToken':
+          void core.lan.newToken();
           break;
         case 'refresh':
           port.postMessage(this.#state());

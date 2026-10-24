@@ -7,6 +7,8 @@ const GROUP_COLORS: `${chrome.tabGroups.Color}`[] = ['purple', 'cyan', 'orange',
 export class Session {
   readonly id: string;
   readonly port: number;
+  /** Address of the LAN client, null for a client on this machine. */
+  readonly remote: string | null;
   readonly connectedAt = Date.now();
   readonly color: `${chrome.tabGroups.Color}`;
   client: ClientInfo | null = null;
@@ -24,15 +26,17 @@ export class Session {
   readonly #pendingServices = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
   #nextServiceId = 1;
 
-  constructor(port: number, index: number, send: (msg: ExtToBridge) => void) {
+  constructor(port: number, index: number, send: (msg: ExtToBridge) => void, remote: string | null = null) {
     this.id = `bridge-${port}`;
     this.port = port;
+    this.remote = remote;
     this.color = GROUP_COLORS[index % GROUP_COLORS.length]!;
     this.#send = send;
   }
 
   get name(): string {
-    return this.client?.name ?? `MCP client :${this.port}`;
+    const name = this.client?.name ?? `MCP client :${this.port}`;
+    return this.remote ? `${name} @ ${this.remote}` : name;
   }
 
   send(msg: ExtToBridge): void {
