@@ -56,6 +56,8 @@ The agent then sees `site_add_todo` and `site_search_products` next to Kyte WebM
 - **All of DevTools.** Console, Network (details, bodies, WebSocket frames, HAR, mocking and blocking), Core Web Vitals, Performance traces with analysis, Coverage, Elements (box model, CSS rules, event listeners), Application (cookies, storage, IndexedDB, Cache Storage, service workers), Issues, Memory (heap snapshots), Media, device, network and CPU emulation, and `cdp_send` for any DevTools Protocol command.
 - **Two-way DevTools.** A "Kyte WebMCP" panel inside DevTools: select an element or a request and send it to the agent with a note; the agent can reveal an element or a source line in your DevTools.
 - **Many agents at once.** Each MCP client is its own session with its own colored tab group; sessions never mix.
+- **Several Chrome profiles.** Each profile running the extension has a name; an MCP client set up from a profile's side panel works with that profile only.
+- **Connections switch.** A switch at the top of the side panel disconnects every client of that Chrome profile and keeps it disconnected until you turn it back on.
 - **Control from another computer.** Turn on **Allow connections from the LAN** in the side panel and an MCP client on another computer of your network drives this Chrome over HTTP, with an access token.
 - **You stay in control.** The agent works fully automatically, but a controlled tab shows a border and a **Stop** button, and the side panel offers Stop and Resume per session or for all, plus a live activity log.
 
@@ -105,6 +107,16 @@ Clients configured with JSON (Claude Desktop, Cursor…):
 
 After the first connection, the **Connect an MCP client** section of the side panel shows both snippets with the real path on your machine, which makes adding more clients easy.
 
+**Several Chrome profiles.** When more than one Chrome profile has Kyte WebMCP, give each profile a name in **Settings → Name of this Chrome profile** (by default a random name such as *Profile 7F3A*) and copy the setup command from the side panel **of the profile you want**. That command pins the client to the profile:
+
+```bash
+claude mcp add kyte-webmcp-work -- node "/path/to/kyte-webmcp/dist/bridge/cli.mjs" --profile "Work"
+```
+
+A pinned client only ever works with the profile of that name (case does not matter); if no profile has that name, it waits and `browser_status` says which profile it is waiting for. A client without `--profile` stays with the first profile that connects to it until the client exits. Renaming a profile moves the pinned clients with the name.
+
+**Turning connections off.** The switch at the top of the side panel turns off every connection of that Chrome profile: all its sessions end, its LAN endpoint closes, and no client connects until you turn it back on (the choice is remembered; the toolbar icon shows *OFF*). A client without `--profile` moves to another profile that is on; a client pinned to this profile waits.
+
 **4. Check**
 
 Start your MCP client: the side panel changes from *Waiting for an MCP client…* to *Connected sessions: 1* and lists the new session. Try asking the agent: *"Use browser_status, then take a screenshot of the current tab."*
@@ -121,9 +133,9 @@ An agent on another computer of your network can drive the Chrome on this comput
 node dist/bridge/cli.mjs install
 ```
 
-This registers the Kyte WebMCP LAN component with Chrome for your user (a Chrome native messaging host; on Windows a key under `HKCU\Software\Google\Chrome\NativeMessagingHosts`). If you updated Kyte WebMCP, reload the extension in `chrome://extensions` first. `node dist/bridge/cli.mjs uninstall` removes the registration.
+This registers the Kyte WebMCP LAN component with Chrome for your user (once for all profiles) (a Chrome native messaging host; on Windows a key under `HKCU\Software\Google\Chrome\NativeMessagingHosts`). If you updated Kyte WebMCP, reload the extension in `chrome://extensions` first. `node dist/bridge/cli.mjs uninstall` removes the registration.
 
-**On computer A, each time you want it:** open the side panel and turn on **Allow connections from the LAN**. Chrome starts the LAN endpoint on port 17850 (`http://<address-of-A>:17850/mcp`) and the side panel shows the address, an access token, and ready-to-copy settings for computer B. Turning the switch off closes the port and disconnects every LAN client; MCP clients on computer A are not affected. The switch is remembered, so the endpoint opens again when Chrome starts.
+**On computer A, each time you want it:** open the side panel and turn on **Allow connections from the LAN**. Chrome starts the LAN endpoint on port 17850 (`http://<address-of-A>:17850/mcp`; each Chrome profile with LAN on gets its own port between 17850 and 17859, and keeps it) and the side panel shows the address, an access token, and ready-to-copy settings for computer B. Turning the switch off closes the port and disconnects every LAN client; MCP clients on computer A are not affected. The switch is remembered, so the endpoint opens again when Chrome starts.
 
 **On computer B:** paste the command from the side panel, for example in Claude Code:
 
@@ -307,7 +319,7 @@ Bridge command line:
 
 | Command | Meaning |
 |---|---|
-| `kyte-webmcp [--port <n>] [--output-dir <folder>]` | Runs the bridge on stdio (what MCP clients start) |
+| `kyte-webmcp [--profile <name>] [--port <n>] [--output-dir <folder>]` | Runs the bridge on stdio (what MCP clients start); `--profile` pins it to the Chrome profile with that name |
 | `kyte-webmcp chrome [--chrome-path <exe>] [--profile-dir <folder>] [--url <address>]` | Starts Chrome with a dedicated agent profile (full DevTools channel, no prompts) |
 | `kyte-webmcp install` / `uninstall` | Registers / removes the LAN component (Chrome native messaging host) for your user |
 | `kyte-webmcp --help` / `--version` | Help / version |
@@ -318,6 +330,7 @@ Environment variables:
 
 | Variable | Default | Meaning |
 |---|---|---|
+| `KYTE_WEBMCP_PROFILE` | — | Same as `--profile` |
 | `KYTE_WEBMCP_OUTPUT_DIR` | `~/.kyte-webmcp/output` | Where screenshots, PDFs, HAR files, traces and heap snapshots go when no path is given |
 | `KYTE_WEBMCP_MODEL_DIR` | `~/.cache/kyte-webmcp/models` | Where Whisper models are stored |
 | `KYTE_WEBMCP_CDP_ENDPOINT` | — | A specific remote debugging endpoint (`ws://…`) for the full DevTools channel |
@@ -341,7 +354,7 @@ End-to-end tests use Chrome for Testing 155 with temporary profiles and never to
 npx @puppeteer/browsers install chrome@155.0.8059.41 --path .cache/chrome
 ```
 
-On macOS/Linux, or to test with another Chrome, set `KYTE_TEST_CHROME` to the Chrome executable. The `devtools-panel` suite opens a visible Chrome window (extension DevTools panels do not run headless). Test files go to `tests/.artifacts/`.
+On macOS/Linux, or to test with another Chrome, set `KYTE_TEST_CHROME` to the Chrome executable. The `devtools-panel` suite opens a visible Chrome window (extension DevTools panels do not run headless), and so does the `profiles` suite (it opens two real Chrome profiles in one browser). Test files go to `tests/.artifacts/`.
 
 Code structure and the rules for adding features: [architecture.md](architecture.md). Feature requirements: [brd.md](brd.md). Both are written in Vietnamese.
 

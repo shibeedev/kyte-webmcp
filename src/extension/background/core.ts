@@ -50,13 +50,28 @@ export class Core {
   readonly #sessionStartHooks: Array<(session: Session) => void> = [];
   readonly #targetListeners: Array<(session: Session) => void> = [];
   readonly #actionObservers: ActionObserver[] = [];
+  /** Master switch and profile name as last applied, to react only when they change. */
+  #enabled = true;
+  #profileName = '';
 
   constructor(features: Feature[]) {
     this.ui = new UiHub(this);
     this.overlay = new Overlay(this);
     this.connections = new Connections(this);
     this.lan = new Lan(this);
-    this.settings.onChange(() => void this.lan.sync());
+    this.settings.onChange((s) => {
+      if (s.enabled !== this.#enabled) {
+        this.#enabled = s.enabled;
+        if (s.enabled) this.connections.scan(true);
+        else this.connections.closeAll();
+        this.#updateBadge();
+      } else if (s.profileName !== this.#profileName && s.enabled) {
+        // Bridges pinned with --profile check the name in the hello: reconnect so each one judges the new name.
+        this.connections.reconnectAll();
+      }
+      this.#profileName = s.profileName;
+      void this.lan.sync();
+    });
     this.dispatcher = new Dispatcher(this);
     for (const feature of features) {
       feature.setup?.(this);
@@ -79,6 +94,8 @@ export class Core {
 
   async start(): Promise<void> {
     await this.settings.ready;
+    this.#enabled = this.settings.get().enabled;
+    this.#profileName = this.settings.get().profileName;
     this.connections.start();
     void this.lan.sync();
     this.#updateBadge();
@@ -171,6 +188,12 @@ export class Core {
   #updateBadge(): void {
     const sessions = [...this.sessions.values()];
     const paused = sessions.some((s) => s.paused);
+    if (!this.settings.get().enabled) {
+      void chrome.action.setBadgeText({ text: 'OFF' });
+      void chrome.action.setBadgeBackgroundColor({ color: '#8e8e93' });
+      void chrome.action.setTitle({ title: t('actionTitleOff') });
+      return;
+    }
     void chrome.action.setBadgeText({ text: sessions.length ? (paused ? '❚❚' : String(sessions.length)) : '' });
     void chrome.action.setBadgeBackgroundColor({ color: paused ? '#d97706' : '#16a34a' });
     void chrome.action.setTitle({ title: sessions.length ? t('actionTitleConnected', String(sessions.length)) : t('actionTitle') });

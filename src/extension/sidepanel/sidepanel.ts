@@ -82,13 +82,27 @@ function connect(): void {
   });
 }
 
+/** Name of this profile's MCP server entry, so each profile can be added to the same MCP client. */
+function serverName(suffix = ''): string {
+  const slug = (state?.settings.profileName ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return `kyte-webmcp-${slug || 'profile'}${suffix}`;
+}
+
 function renderStatus(): void {
   if (!state) return;
   const status = $('status');
   const sessions = state.sessions;
   const paused = sessions.some((s) => s.paused);
-  status.className = `status ${sessions.length ? (paused ? 'paused' : 'connected') : 'waiting'}`;
-  $('status-text').textContent = sessions.length ? t('statusConnected', String(sessions.length)) : t('statusWaiting');
+  const enabled = state.settings.enabled;
+  $<HTMLInputElement>('set-enabled').checked = enabled;
+  status.className = `status ${!enabled ? 'off' : sessions.length ? (paused ? 'paused' : 'connected') : 'waiting'}`;
+  $('status-text').textContent = !enabled ? t('statusOff') : sessions.length ? t('statusConnected', String(sessions.length)) : t('statusWaiting');
   const stopAll = $<HTMLButtonElement>('stop-all');
   stopAll.hidden = !sessions.length;
   const allPaused = sessions.length > 0 && sessions.every((s) => s.paused);
@@ -121,6 +135,7 @@ function renderSessions(): void {
     }),
   );
   $('no-sessions').hidden = state.sessions.length > 0;
+  $('no-sessions').textContent = state.settings.enabled ? t('noSessions') : t('noSessionsOff');
   // Setup help is most useful while nothing is connected.
   const setup = $<HTMLDetailsElement>('setup');
   if (!state.sessions.length && !setup.dataset.touched) setup.open = true;
@@ -191,6 +206,8 @@ function renderWebmcp(): void {
 function renderSettings(): void {
   if (!state) return;
   $<HTMLInputElement>('set-overlay').checked = state.settings.overlay;
+  const name = $<HTMLInputElement>('set-profile-name');
+  if (document.activeElement !== name) name.value = state.settings.profileName;
   $<HTMLSelectElement>('set-whisper').value = state.settings.whisperModel;
 }
 
@@ -200,8 +217,9 @@ function renderLan(): void {
   $<HTMLInputElement>('set-lan').checked = state.settings.lan;
   const sub = $('lan-state');
   sub.className = `sub ${lan.state}`;
-  sub.textContent =
-    lan.state === 'on' ? t('lanOn', String(lan.port)) : lan.state === 'starting' ? t('lanStarting') : lan.state === 'error' ? (lan.notInstalled ? t('lanNotInstalledShort') : lan.error) : t('lanOff');
+  sub.textContent = !state.settings.enabled
+    ? t('lanOffMaster')
+    : lan.state === 'on' ? t('lanOn', String(lan.port)) : lan.state === 'starting' ? t('lanStarting') : lan.state === 'error' ? (lan.notInstalled ? t('lanNotInstalledShort') : lan.error) : t('lanOff');
   $('lan-install').hidden = !(state.settings.lan && lan.notInstalled);
   $('cmd-lan-install').textContent = `node "${cliPath || '<path-to-kyte-webmcp>/dist/bridge/cli.mjs'}" install`;
   $('lan-ready').hidden = !(state.settings.lan && lan.state === 'on');
@@ -211,15 +229,17 @@ function renderLan(): void {
   select.replaceChildren(...lan.addresses.map((a) => h('option', { value: a }, a)));
   select.value = lanAddress;
   const url = `http://${lanAddress || t('lanNoAddress')}:${lan.port}${LAN_PATH}`;
-  $('cmd-lan-claude').textContent = `claude mcp add --transport http kyte-webmcp-lan ${url} --header "Authorization: Bearer ${lan.token}"`;
-  $('cmd-lan-json').textContent = JSON.stringify({ mcpServers: { 'kyte-webmcp-lan': { type: 'http', url, headers: { Authorization: `Bearer ${lan.token}` } } } }, null, 2);
+  $('cmd-lan-claude').textContent = `claude mcp add --transport http ${serverName('-lan')} ${url} --header "Authorization: Bearer ${lan.token}"`;
+  $('cmd-lan-json').textContent = JSON.stringify({ mcpServers: { [serverName('-lan')]: { type: 'http', url, headers: { Authorization: `Bearer ${lan.token}` } } } }, null, 2);
 }
 
 function renderSetup(): void {
   if (!state) return;
   const path = cliPath || '<path-to-kyte-webmcp>/dist/bridge/cli.mjs';
-  $('cmd-claude').textContent = `claude mcp add kyte-webmcp -- node "${path}"`;
-  $('cmd-json').textContent = JSON.stringify({ mcpServers: { 'kyte-webmcp': { command: 'node', args: [path] } } }, null, 2);
+  const profile = state.settings.profileName;
+  $('cmd-claude').textContent = `claude mcp add ${serverName()} -- node "${path}" --profile "${profile}"`;
+  $('cmd-json').textContent = JSON.stringify({ mcpServers: { [serverName()]: { command: 'node', args: [path, '--profile', profile] } } }, null, 2);
+  $('profile-note').textContent = t('setupProfileNote', profile);
   $('ports').textContent = t('portsInfo', [String(state.ports[0]), String(state.ports[1])]);
   $('version').textContent = t('versionInfo', [state.extVersion, state.extensionId]);
 }
@@ -242,6 +262,11 @@ $('filter').addEventListener('input', (e) => {
 });
 $('set-overlay').addEventListener('change', (e) => send({ type: 'settings', patch: { overlay: (e.target as HTMLInputElement).checked } }));
 $('set-whisper').addEventListener('change', (e) => send({ type: 'settings', patch: { whisperModel: (e.target as HTMLSelectElement).value } }));
+$('set-enabled').addEventListener('change', (e) => send({ type: 'settings', patch: { enabled: (e.target as HTMLInputElement).checked } }));
+$('set-profile-name').addEventListener('change', (e) => send({ type: 'settings', patch: { profileName: (e.target as HTMLInputElement).value } }));
+$('set-profile-name').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+});
 $('set-lan').addEventListener('change', (e) => send({ type: 'settings', patch: { lan: (e.target as HTMLInputElement).checked } }));
 $('lan-address').addEventListener('change', (e) => {
   lanAddress = (e.target as HTMLSelectElement).value;

@@ -4,14 +4,14 @@ import os from 'node:os';
 import type { Server as McpServer } from '@modelcontextprotocol/sdk/server/index.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
-import { LAN_PATH, LAN_PORT } from '../shared/constants.ts';
+import { LAN_PATH, LAN_PORT, LAN_PORT_COUNT } from '../shared/constants.ts';
 import type { ExtToLanHost, LanHostToExt } from '../shared/protocol.ts';
 import { encodeNative, NativeReader } from './native-host.ts';
 import { log } from './log.ts';
 import type { BridgeContext } from './types.ts';
 
-/** Builds one bridge (extension hub + MCP server) for a LAN client. */
-export type BridgeFactory = (remote: string) => { ctx: BridgeContext; server: McpServer };
+/** Builds one bridge (extension hub + MCP server) for a LAN client, serving only the Chrome profile `profileId`. */
+export type BridgeFactory = (remote: string, profileId: string) => { ctx: BridgeContext; server: McpServer };
 
 /**
  * A session with no open request or stream for this long is parked: its
@@ -110,6 +110,8 @@ export class LanGateway {
   readonly #sweep: NodeJS.Timeout;
   #token: Buffer | null = null;
   #server: Server | null = null;
+  /** The Chrome profile that started this LAN host; its bridges accept only that profile. */
+  profileId = '';
 
   /** `onBridge` runs whenever a session's hub starts listening, so the extension can connect without waiting for its next scan. */
   constructor(factory: BridgeFactory, onBridge: () => void) {
@@ -188,7 +190,7 @@ export class LanGateway {
   }
 
   async #create(remote: string): Promise<LanSession> {
-    const { ctx, server } = this.#factory(remote);
+    const { ctx, server } = this.#factory(remote, this.profileId);
     try {
       await ctx.hub.listen();
     } catch (error) {
@@ -266,23 +268,31 @@ export function runLanHost(factory: BridgeFactory): void {
   const send = (message: LanHostToExt) => process.stdout.write(encodeNative(message));
   const gateway = new LanGateway(factory, () => send({ t: 'scan' }));
   let listening: Promise<void> | null = null;
-  const listen = async (): Promise<void> => {
+  // Every Chrome profile with LAN on runs its own host: the profile's remembered port first, then the rest of the range.
+  const listen = async (preferred: number): Promise<void> => {
+    const ports = [preferred, ...Array.from({ length: LAN_PORT_COUNT }, (_, i) => LAN_PORT + i).filter((p) => p !== preferred)];
     for (;;) {
-      try {
-        await gateway.listen();
-        log(`LAN endpoint listening on port ${gateway.port}`);
-        send({ t: 'listening', port: gateway.port, addresses: lanAddresses() });
-        return;
-      } catch (error) {
-        const code = (error as NodeJS.ErrnoException).code;
-        send({ t: 'error', message: code === 'EADDRINUSE' ? `Port ${LAN_PORT} is already in use by another program.` : error instanceof Error ? error.message : String(error) });
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+      let failure = '';
+      for (const port of ports) {
+        try {
+          await gateway.listen(port);
+          log(`LAN endpoint listening on port ${gateway.port}`);
+          send({ t: 'listening', port: gateway.port, addresses: lanAddresses() });
+          return;
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== 'EADDRINUSE') failure = error instanceof Error ? error.message : String(error);
+        }
       }
+      send({ t: 'error', message: failure || `Ports ${LAN_PORT}-${LAN_PORT + LAN_PORT_COUNT - 1} are all in use by other programs or Chrome profiles.` });
+      await new Promise((resolve) => setTimeout(resolve, 5000));
     }
   };
   const reader = new NativeReader((raw) => {
     const message = raw as ExtToLanHost;
-    if (message?.t === 'start' && typeof message.token === 'string') void gateway.setToken(message.token).then(() => (listening ??= listen()));
+    if (message?.t !== 'start' || typeof message.token !== 'string') return;
+    gateway.profileId = String(message.profileId ?? '');
+    const preferred = Number.isInteger(message.port) && message.port >= LAN_PORT && message.port < LAN_PORT + LAN_PORT_COUNT ? message.port : LAN_PORT;
+    void gateway.setToken(message.token).then(() => (listening ??= listen(preferred)));
   });
   let exiting = false;
   const exit = () => {

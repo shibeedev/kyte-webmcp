@@ -214,5 +214,26 @@
   },
   "lanWarning": {
     "message": "Anyone on your network who has this token controls this Chrome like a local agent, including reading and writing files on this computer. The connection is not encrypted: turn this on only on networks you trust. If Windows asks, allow Node.js on private networks."
+  },
+  "actionTitleOff": {
+    "message": "Kyte WebMCP — connections off in this profile"
+  },
+  "connectionsSwitch": {
+    "message": "Let MCP clients connect to this Chrome profile"
+  },
+  "statusOff": {
+    "message": "Connections off"
+  },
+  "noSessionsOff": {
+    "message": "Connections are off for this Chrome profile. Turn on the switch at the top to let MCP clients connect."
+  },
+  "lanOffMaster": {
+    "message": "Connections are off for this profile (switch at the top)."
+  },
+  "settingProfileName": {
+    "message": "Name of this Chrome profile"
+  },
+  "setupProfileNote": {
+    "message": "These commands connect only to this Chrome profile (\"$1\"). Use the side panel of another profile to connect a client to that one."
   }
 }

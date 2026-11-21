@@ -1,6 +1,5 @@
 import os from 'node:os';
 import type { BridgeFeature } from '../../bridge/types.ts';
-import { NOT_CONNECTED_HELP } from '../../bridge/hub.ts';
 
 export const connectionBridge: BridgeFeature = {
   name: 'connection',
@@ -11,7 +10,8 @@ export const connectionBridge: BridgeFeature = {
       const lines = [
         hub.isConnected() && hub.extension
           ? `Extension: connected (Kyte WebMCP ${hub.extension.version}; ${hub.extension.userAgent})`
-          : `Extension: NOT connected. ${NOT_CONNECTED_HELP}`,
+          : `Extension: NOT connected. ${hub.notConnectedHelp()}`,
+        `Chrome profile: ${hub.profileStatus()}`,
         `Bridge: kyte-webmcp ${ctx.version}, port ${hub.port}, pid ${process.pid}`,
         ...(ctx.remote ? [`Connection: over the LAN from ${ctx.remote}; the bridge runs on the browser machine (${os.hostname()}), so file paths refer to that machine`] : []),
         `MCP client: ${hub.client ? `${hub.client.name} ${hub.client.version}` : 'unknown'}`,

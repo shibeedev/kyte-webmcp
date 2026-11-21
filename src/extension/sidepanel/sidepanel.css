@@ -57,6 +57,8 @@ body {
   border-bottom: 0.5px solid var(--separator);
 }
 .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.actions { display: flex; align-items: center; gap: 10px; flex: none; }
+.status.off .dot { background: var(--tertiary); animation: none; }
 .logo { width: 30px; height: 30px; flex: none; filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.18)); }
 .titles { min-width: 0; }
 h1 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: -0.01em; }
@@ -161,6 +163,13 @@ h3 { margin: 12px 0 6px; font-size: 12px; font-weight: 600; }
 }
 .switch input:checked { background: var(--accent); }
 .switch input:checked::after { transform: translateX(13px); }
+
+/* Text field, like NSTextField in a settings row. */
+input.text {
+  font: 13px var(--sans); height: 22px; width: 46%; min-width: 120px; padding: 0 7px; border: 0; border-radius: 5px; text-align: right;
+  background: var(--control); color: var(--label); box-shadow: var(--control-shadow);
+}
+input.text:focus { text-align: left; }
 
 /* Pop-up button, with the blue chevron square of macOS. */
 .popup { position: relative; display: inline-flex; }

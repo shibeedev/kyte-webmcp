@@ -68,7 +68,7 @@ describe('side panel and indicator (English)', () => {
     panel = await openSidePanel(bh);
     assert.match(await waitText(panel, '#status', /Waiting for an MCP client/), /Waiting/);
     assert.equal(await panel.$eval('#setup', (d) => (d as HTMLDetailsElement).open), true);
-    assert.match(await panel.$eval('#cmd-claude', (e) => e.textContent ?? ''), /claude mcp add kyte-webmcp -- node "<path-to-kyte-webmcp>\/dist\/bridge\/cli\.mjs"/);
+    assert.match(await panel.$eval('#cmd-claude', (e) => e.textContent ?? ''), /^claude mcp add kyte-webmcp-profile-[0-9a-f]{4} -- node "<path-to-kyte-webmcp>\/dist\/bridge\/cli\.mjs" --profile "Profile [0-9A-F]{4}"$/);
     assert.match(await panel.$eval('#no-sessions', (e) => (e as HTMLElement).innerText), /No MCP client is connected yet/);
     await panel.screenshot({ path: path.join(SHOTS, 'sidepanel-waiting-en.png') });
   });
@@ -79,7 +79,8 @@ describe('side panel and indicator (English)', () => {
     await waitText(panel, '#status', /Connected sessions: 1/);
     const session = await waitText(panel, '#sessions', /kyte-ui/);
     assert.match(session, /Target: follows your active tab/);
-    assert.equal(await waitText(panel, '#cmd-claude', /cli\.mjs"$/), `claude mcp add kyte-webmcp -- node "${CLI}"`);
+    const profile = await panel.$eval('#set-profile-name', (e) => (e as HTMLInputElement).value);
+    assert.equal(await waitText(panel, '#cmd-claude', /cli\.mjs" --profile/), `claude mcp add kyte-webmcp-${profile.toLowerCase().replace(/ /g, '-')} -- node "${CLI}" --profile "${profile}"`);
     assert.equal(await panel.$eval('#stop-all', (b) => (b as HTMLButtonElement).hidden), false);
   });
 

@@ -136,11 +136,11 @@ Danh sách feature hiện có:
 | `geometry.ts`, `ax.ts`, `image.ts` | — | Tọa độ/hit-test (bỏ qua overlay của chính mình), cây accessibility qua mọi frame, xử lý ảnh trong service worker (scale, đánh nhãn Set-of-Mark, ghép lưới). |
 | `core.sessions` + `sessions.ts` | — | Mỗi MCP client = một `Session`: tab đích, nhóm tab màu riêng, lời gọi đang chạy, gọi service phía bridge, ghi/stream file qua bridge. |
 | `core.dispatcher` | `dispatcher.ts` | Định tuyến lời gọi: chọn tab đích, khóa theo tab với tool `exclusive`, ngân sách thời gian, hủy, tạm dừng/Stop, ghi nhật ký hoạt động. |
-| `core.connections` | `connections.ts` | Quét cổng 17831–17840 mỗi 2 giây (có backoff), handshake, ping 20 giây. Bridge phục vụ client LAN (`welcome.remote`) chỉ được nhận khi công tắc LAN đang bật. |
-| `core.lan` | `lan.ts` | Công tắc LAN: giữ cổng native messaging tới LAN host khi bật (cổng mở cũng giữ service worker sống), gửi mã truy cập, nhận trạng thái/địa chỉ, ngắt phiên LAN khi tắt; alarm 30 giây thử lại khi host chưa cài hoặc đã thoát. |
+| `core.connections` | `connections.ts` | Quét cổng 17831–17840 mỗi 2 giây (có backoff), handshake (hello mang danh tính profile), ping 20 giây. Không quét trước khi settings nạp xong hay khi công tắc tổng tắt; tắt công tắc thì đóng mọi socket bằng mã 4004. Bridge phục vụ client LAN (`welcome.remote`) chỉ được nhận khi công tắc LAN đang bật. |
+| `core.lan` | `lan.ts` | Công tắc LAN (chỉ chạy khi công tắc tổng cũng bật): giữ cổng native messaging tới LAN host (cổng mở cũng giữ service worker sống), gửi mã truy cập, id profile và cổng đã nhớ (`lanPort`), nhận trạng thái/địa chỉ, ngắt phiên LAN khi tắt; alarm 30 giây thử lại khi host chưa cài hoặc đã thoát. |
 | `core.overlay` | `overlay.ts` | Tiêm overlay khi có hoạt động, tự ẩn sau 4 giây rảnh, tạm giấu khi chụp ảnh. |
 | `core.ui` | `ui-hub.ts` | Kết nối side panel và DevTools (theo tab), hộp thư "gửi cho agent", lệnh reveal. |
-| `core.activity`, `core.settings`, `core.offscreen` | — | Nhật ký (che giá trị nhạy cảm; lưu trong `chrome.storage.session` để còn sau khi Chrome dừng service worker lúc rảnh), cài đặt người dùng, cầu nối tới offscreen document. |
+| `core.activity`, `core.settings`, `core.offscreen` | — | Nhật ký (che giá trị nhạy cảm; lưu trong `chrome.storage.session` để còn sau khi Chrome dừng service worker lúc rảnh), cài đặt người dùng (gồm công tắc tổng `enabled` và danh tính profile `profileId`/`profileName`, tạo ở lần chạy đầu trong profile; `update()` chờ `ready` để không bị dữ liệu đã lưu ghi đè), cầu nối tới offscreen document. |
 
 Service worker MV3 có thể bị Chrome dừng. `index.ts` đánh thức nó bằng alarm 30 giây và các sự kiện duyệt web thường gặp (đổi tab, tab bắt đầu tải, đổi cửa sổ); bridge chờ extension kết nối lại tối đa 40 giây trước khi báo lỗi.
 
@@ -148,11 +148,11 @@ Service worker MV3 có thể bị Chrome dừng. `index.ts` đánh thức nó b�
 
 | File | Trách nhiệm |
 |---|---|
-| `cli.ts` | Điểm vào: chế độ bridge (mặc định), `chrome`, `broker`, `install`/`uninstall` (đăng ký native messaging host), `lan-host`; tắt khi stdin đóng hoặc nhận SIGINT/SIGTERM. `createBridge()` dựng một bridge (hub + MCP server) và được dùng cho cả stdio lẫn từng phiên LAN. |
+| `cli.ts` | Điểm vào: chế độ bridge (mặc định), `chrome`, `broker`, `install`/`uninstall` (đăng ký native messaging host), `lan-host`; tắt khi stdin đóng hoặc nhận SIGINT/SIGTERM. `createBridge()` dựng một bridge (hub + MCP server) và được dùng cho cả stdio lẫn từng phiên LAN. `--profile <tên>` (hoặc `KYTE_WEBMCP_PROFILE`) ghim bridge vào một profile Chrome. |
 | `lan.ts` | LAN host: `LanGateway` (HTTP, lọc địa chỉ nội bộ, chặn request có `Origin`, bearer token, phiên Streamable HTTP, cất/khôi phục phiên im lặng) và `runLanHost()` (vòng native messaging). |
 | `native-host.ts` | Ghi manifest + launcher của native messaging host (Windows: registry HKCU; macOS/Linux: thư mục `NativeMessagingHosts` của Chrome), đóng/mở khung tin native messaging. |
 | `mcp-server.ts` | `Server` cấp thấp của MCP SDK: `tools/list` (tool tĩnh + `site_*` động, có `listChanged`), kiểm tham số theo schema, `instructions`, prompts. |
-| `hub.ts` | WebSocket server chờ extension: lấy cổng trống đầu tiên trong dải, chỉ nhận origin của extension và Host loopback, gọi/hủy tool, phục vụ `svc`. |
+| `hub.ts` | WebSocket server chờ extension: lấy cổng trống đầu tiên trong dải, chỉ nhận origin của extension và Host loopback, chọn profile Chrome phục vụ (mục 5.2), gọi/hủy tool, phục vụ `svc`. |
 | `files.ts` | Thư mục output (mặc định `~/.kyte-webmcp/output`), service `file.write/open/append/close`. |
 | `types.ts`, `log.ts` | Kiểu `BridgeContext`/`BridgeFeature`, log ra stderr (stdout dành cho MCP). |
 
@@ -167,8 +167,9 @@ sequenceDiagram
     participant E as Extension (service worker)
     participant T as Tab (CDP)
     E->>B: WebSocket mở (origin chrome-extension://pfnhddjiobnpeonenahocokhnhkfhjfc)
-    B->>E: welcome {bridgeVersion, pid, port, client, cliPath}
-    E->>B: hello {protocol, extVersion, userAgent}
+    E->>B: hello {protocol, extVersion, userAgent, profile: {id, name}}
+    B->>B: profile này được phục vụ? (mục 5.2) — không thì đóng 4003
+    B->>E: welcome {bridgeVersion, pid, port, client, cliPath, remote?}
     A->>B: tools/call click {ref: "e12"}
     B->>B: kiểm tham số theo inputSchema
     B->>E: call {id, tool, args}
@@ -180,12 +181,13 @@ sequenceDiagram
     end
     E->>B: result {id, result}
     B->>A: CallToolResult
-    Note over E,B: ping/pong mỗi 20 giây; đóng 4001 = cổng đã có extension khác giữ, 4002 = lệch giao thức
+    Note over E,B: ping/pong mỗi 20 giây; đóng 4001 = cổng đã có extension khác giữ, 4002 = lệch giao thức, 4003 = bridge phục vụ profile khác; extension đóng 4004 = profile tắt kết nối
 ```
 
 - Extension gửi `page_tools {tabId, tools}` khi danh sách WebMCP của tab đích thay đổi; bridge đổi tên an toàn (`site_` + tên, tối đa 64 ký tự, tránh trùng tool tĩnh) và gửi `notifications/tools/list_changed`.
 - Hủy từ client (`notifications/cancelled`) thành `cancel {id}` tới extension; handler nhận `signal` đã abort.
 - Kết quả lớn (HAR, trace, PDF, heap snapshot, ảnh lưu file) được extension stream sang bridge và ghi vào thư mục output; agent nhận đường dẫn.
+- `welcome` chỉ được gửi sau khi hello được chấp nhận, nên profile bị từ chối không bao giờ tạo phiên (không nhấp nháy trong nhật ký).
 - `welcome.remote` (tùy chọn) là địa chỉ của client LAN mà bridge đó phục vụ; extension đặt tên phiên `<client> @ <địa chỉ>`, gắn nhãn LAN và từ chối bridge đó khi công tắc LAN tắt.
 
 ### 5.1 Kết nối từ máy khác trong LAN
@@ -200,7 +202,7 @@ sequenceDiagram
     participant R as MCP client máy khác
     U->>E: settings {lan: true}
     E->>H: connectNative("com.kyte.webmcp") + {t: "start", token}
-    H->>H: listen :17850 (mọi interface)
+    H->>H: listen cổng đã nhớ của profile, rồi phần còn lại của 17850–17859 (mọi interface)
     H->>E: {t: "listening", port, addresses}
     R->>H: POST /mcp initialize (Authorization: Bearer token)
     H->>H: địa chỉ nội bộ? không có Origin? token đúng?
@@ -218,6 +220,19 @@ sequenceDiagram
 - **Vòng đời phiên**: mỗi phiên Streamable HTTP có ctx/hub/MCP server riêng (giống một bridge stdio). `DELETE` kết thúc ngay. Phiên không còn request hay SSE stream nào mở trong 60 giây thì được *cất*: hub đóng (extension kết thúc phiên, dọn tab/overlay) nhưng phiên MCP giữ nguyên; request kế tiếp mở lại hub. Phiên cất quá 24 giờ thì bị quên (client nhận 404 và phải kết nối lại). Client dùng MCP SDK luôn giữ SSE stream nên không bị cất khi còn chạy.
 - **Bridge LAN chạy trên máy có Chrome**: file output, Whisper, kênh DevTools đầy đủ đều ở máy đó; `instructions` và `browser_status` báo cho agent biết đường dẫn file thuộc máy có Chrome.
 - Service worker khởi động lại (reload extension, cập nhật) thì cổng native đóng, host thoát; `core.lan.sync()` lúc khởi động mở lại host mới, client LAN phải kết nối lại.
+
+
+### 5.2 Nhiều profile Chrome
+
+Mỗi profile Chrome bật extension chạy một bản extension riêng (cùng ID nhờ `key`, storage và service worker riêng) và mọi bản đều dò cùng dải cổng loopback. Bridge vì vậy chọn profile ở bước hello:
+
+| Bridge | Nhận profile nào | Ghi chú |
+|---|---|---|
+| `--profile <tên>` | Profile có `profileName` trùng (không phân biệt hoa thường, bỏ khoảng trắng hai đầu) | Không bao giờ đổi. Side panel tạo sẵn lệnh có `--profile` của profile đang mở và tên server `kyte-webmcp-<slug>`. |
+| Không ghim | Profile đầu tiên nói hello, giữ `profileId` đó tới khi bridge tắt | Profile đó đóng bằng 4004 (tắt công tắc tổng) thì bridge bỏ gắn. Tạm dừng service worker không bỏ gắn. |
+| Do LAN host tạo | Đúng `profileId` đã gửi trong `start` | Mỗi profile một LAN host, một cổng trong 17850–17859, nhớ trong `lanPort`. |
+
+Logic chọn là hàm thuần `acceptsProfile()` trong `hub.ts`. Profile bị từ chối nhận mã 4003 và thử lại sau 10 giây (để nhận bridge khi profile đang giữ nó nhả ra); bridge chỉ log mỗi profile bị từ chối một lần. Đổi `profileName` thì extension đóng mọi socket để từng bridge xét lại tên mới. `browser_status` và lỗi "chưa kết nối" nói rõ bridge đang phục vụ profile nào.
 
 ## 6. Kênh DevTools đầy đủ
 
@@ -283,6 +298,7 @@ Manifest được chép kèm version lấy từ `package.json`; icon được v�
 - `tests/fixtures/site/` chứa trang mẫu: form, shadow DOM, iframe, dialog, kéo thả, video có phụ đề và giọng nói, video khác origin chặn tải trực tiếp, trang chỉ cho phát khi có cử chỉ người dùng, video mã hóa Clear Key (đen và đỏ), trang WebMCP, trang storage/perf.
 - Bộ `impact` đo ảnh hưởng lên trình duyệt: trang agent không đụng tới giữ y như khi không cài extension; phiên kết thúc thì dọn sạch (giả lập thiết bị, mock mạng, overlay, debugger) mà không đóng tab; hai phiên chạy song song không lẫn nhau; tự phục hồi khi service worker khởi động lại và khi bridge khởi động lại; tốn rất ít tài nguyên khi rảnh.
 - Bộ `devtools-panel` mở cửa sổ thật (headful) vì panel DevTools của extension không chạy ở headless.
+- Bộ `profiles` (`tests/helpers/profiles.ts`) chạy **hai profile thật trong một Chrome for Testing**: khởi chạy Chrome trực tiếp (cờ mặc định của Puppeteer chặn mở profile thứ hai) với `--load-extension`, rồi chạy lại Chrome cùng user data dir với `--profile-directory=Profile 1` để mở cửa sổ profile thứ hai, sau đó `puppeteer.connect`. Headful, tắt occlusion của Windows (cửa sổ bị che thì Chrome ngừng vẽ, thao tác chuột treo). CDP không tạo được tab trong profile thật, nên muốn đánh thức service worker của một profile thì điều hướng một tab có sẵn của profile đó. Thử: client không ghim dính profile đầu kể cả khi service worker của nó ngủ, client ghim tên, tên không tồn tại, đổi tên trên side panel, công tắc tổng (chuyển client không ghim, giữ trạng thái qua khởi động lại service worker), LAN mỗi profile một cổng, giao diện tiếng Việt.
 
 ## 10. Giới hạn đã biết của Chrome
 

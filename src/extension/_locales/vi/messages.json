@@ -214,5 +214,26 @@
   },
   "lanWarning": {
     "message": "Ai trong mạng có mã này đều điều khiển được Chrome này như agent trên máy, kể cả đọc và ghi file trên máy này. Kết nối không mã hóa: chỉ bật trên mạng bạn tin cậy. Nếu Windows hỏi, hãy cho phép Node.js trên mạng riêng tư (Private)."
+  },
+  "actionTitleOff": {
+    "message": "Kyte WebMCP — đã tắt kết nối ở profile này"
+  },
+  "connectionsSwitch": {
+    "message": "Cho MCP client kết nối vào profile Chrome này"
+  },
+  "statusOff": {
+    "message": "Đã tắt kết nối"
+  },
+  "noSessionsOff": {
+    "message": "Profile Chrome này đang tắt kết nối. Bật công tắc ở trên cùng để MCP client kết nối được."
+  },
+  "lanOffMaster": {
+    "message": "Profile này đang tắt kết nối (công tắc trên cùng)."
+  },
+  "settingProfileName": {
+    "message": "Tên của profile Chrome này"
+  },
+  "setupProfileNote": {
+    "message": "Các lệnh này chỉ kết nối vào profile Chrome này (\"$1\"). Muốn nối client vào profile khác thì dùng side panel của profile đó."
   }
 }

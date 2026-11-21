@@ -1,4 +1,4 @@
-import { NATIVE_HOST } from '../../shared/constants.ts';
+import { LAN_PORT, NATIVE_HOST } from '../../shared/constants.ts';
 import type { ExtToLanHost, LanHostToExt } from '../../shared/protocol.ts';
 import type { Core } from './core.ts';
 
@@ -38,18 +38,24 @@ export class Lan {
     return this.#view;
   }
 
-  /** Starts or stops the host to match the setting; also retries a host that failed (the wake-up alarm calls it). */
+  /** Starts or stops the host to match the settings (LAN switch and master switch); also retries a host that failed. */
   async sync(): Promise<void> {
-    if (!this.#core.settings.get().lan) return this.#stop();
+    const wanted = () => this.#core.settings.get().enabled && this.#core.settings.get().lan;
+    if (!wanted()) return this.#stop();
     if (this.#port) return;
     const token = await this.#token();
-    if (this.#port || !this.#core.settings.get().lan) return;
+    const { lanPort } = await chrome.storage.local.get('lanPort');
+    if (this.#port || !wanted()) return;
     const port = chrome.runtime.connectNative(NATIVE_HOST);
     this.#port = port;
     // A retry after an error keeps showing that error until the host answers.
     this.#set(this.#view.state === 'error' ? { token } : { state: 'starting', token, error: '', notInstalled: false });
     port.onMessage.addListener((msg: LanHostToExt) => {
-      if (msg.t === 'listening') this.#set({ state: 'on', port: msg.port, addresses: msg.addresses, error: '', notInstalled: false });
+      if (msg.t === 'listening') {
+        // Remembered so this profile keeps its port (other profiles may hold the others) and LAN clients keep working.
+        void chrome.storage.local.set({ lanPort: msg.port });
+        this.#set({ state: 'on', port: msg.port, addresses: msg.addresses, error: '', notInstalled: false });
+      }
       else if (msg.t === 'error') this.#set({ state: 'error', error: msg.message, notInstalled: false });
       else if (msg.t === 'scan') this.#core.connections.scan(true);
     });
@@ -58,9 +64,10 @@ export class Lan {
       if (this.#port !== port) return;
       this.#port = null;
       this.#core.connections.closeRemote();
+      if (!wanted()) return this.#stop();
       this.#set({ state: 'error', port: 0, addresses: [], error, notInstalled: /not found/i.test(error) });
     });
-    port.postMessage({ t: 'start', token } satisfies ExtToLanHost);
+    port.postMessage({ t: 'start', token, profileId: this.#core.settings.get().profileId, port: typeof lanPort === 'number' ? lanPort : LAN_PORT } satisfies ExtToLanHost);
   }
 
   /** A new token disconnects every LAN client that used the old one. */
@@ -68,7 +75,7 @@ export class Lan {
     const token = randomToken();
     await chrome.storage.local.set({ lanToken: token });
     this.#set({ token });
-    this.#port?.postMessage({ t: 'start', token } satisfies ExtToLanHost);
+    this.#port?.postMessage({ t: 'start', token, profileId: this.#core.settings.get().profileId, port: this.#view.port || LAN_PORT } satisfies ExtToLanHost);
   }
 
   async #token(): Promise<string> {

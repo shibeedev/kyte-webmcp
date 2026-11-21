@@ -21,7 +21,12 @@
           <p id="status" class="status" role="status"><span class="dot"></span><span id="status-text"></span></p>
         </div>
       </div>
-      <button id="stop-all" class="btn danger" type="button" hidden></button>
+      <div class="actions">
+        <button id="stop-all" class="btn danger" type="button" hidden></button>
+        <label class="switch master" data-i18n-title="connectionsSwitch">
+          <input id="set-enabled" type="checkbox" role="switch" data-i18n-aria="connectionsSwitch" />
+        </label>
+      </div>
     </header>
 
     <main>
@@ -58,6 +63,10 @@
       <section class="section" aria-labelledby="h-settings">
         <h2 id="h-settings" class="section-title" data-i18n="sectionSettings"></h2>
         <div class="group">
+          <label class="row">
+            <span data-i18n="settingProfileName"></span>
+            <input id="set-profile-name" class="text" type="text" maxlength="40" spellcheck="false" />
+          </label>
           <label class="row switch">
             <span data-i18n="settingOverlay"></span>
             <input id="set-overlay" type="checkbox" role="switch" />
@@ -108,6 +117,7 @@
         <summary><h2 data-i18n="sectionSetup"></h2><span class="chevron" aria-hidden="true"></span></summary>
         <div class="setup-body">
           <p class="muted" data-i18n="setupIntro"></p>
+          <p id="profile-note" class="muted small"></p>
           <h3 data-i18n="setupClaudeCode"></h3>
           <div class="code"><code id="cmd-claude"></code><button class="btn small" type="button" data-copy="cmd-claude" data-i18n="copy"></button></div>
           <h3 data-i18n="setupJson"></h3>

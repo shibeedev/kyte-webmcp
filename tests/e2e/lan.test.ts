@@ -62,7 +62,7 @@ const sessionsText = (page: Page) => page.$eval('#sessions', (el) => (el as HTML
 /** What the side panel tells the user to run on the other computer. */
 async function connection(panel: Page): Promise<{ url: string; address: string; token: string }> {
   const cmd = await panel.$eval('#cmd-lan-claude', (el) => el.textContent ?? '');
-  const m = /^claude mcp add --transport http kyte-webmcp-lan (http:\/\/([^:/]+):(\d+)\/mcp) --header "Authorization: Bearer ([A-Za-z0-9_-]{20,})"$/.exec(cmd);
+  const m = /^claude mcp add --transport http kyte-webmcp-[a-z0-9-]+-lan (http:\/\/([^:/]+):(\d+)\/mcp) --header "Authorization: Bearer ([A-Za-z0-9_-]{20,})"$/.exec(cmd);
   assert.ok(m, `unexpected command: ${cmd}`);
   return { url: m[1]!, address: m[2]!, token: m[4]! };
 }
@@ -176,7 +176,8 @@ describe('LAN connections (English)', () => {
     assert.ok(isPrivateAddress(conn.address), conn.address);
     assert.equal(conn.url, `http://${conn.address}:${PORT}${LAN_PATH}`);
     const json = JSON.parse(await panel.$eval('#cmd-lan-json', (el) => el.textContent ?? ''));
-    assert.deepEqual(json, { mcpServers: { 'kyte-webmcp-lan': { type: 'http', url: conn.url, headers: { Authorization: `Bearer ${conn.token}` } } } });
+    assert.deepEqual(Object.values(json.mcpServers), [{ type: 'http', url: conn.url, headers: { Authorization: `Bearer ${conn.token}` } }]);
+    assert.match(Object.keys(json.mcpServers)[0]!, /^kyte-webmcp-profile-[0-9a-f]{4}-lan$/);
     t.diagnostic(`endpoint ${conn.url}`);
   });
 

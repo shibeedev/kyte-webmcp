@@ -1,5 +1,5 @@
 import { PORT_BASE, PORT_COUNT, PROTOCOL_VERSION, WS_PATH } from '../../shared/constants.ts';
-import { CLOSE_BUSY, type BridgeToExt, type ExtToBridge } from '../../shared/protocol.ts';
+import { CLOSE_BUSY, CLOSE_OTHER_PROFILE, CLOSE_RELEASE, type BridgeToExt, type ExtToBridge } from '../../shared/protocol.ts';
 import type { Core } from './core.ts';
 import { Session } from './sessions.ts';
 
@@ -14,7 +14,10 @@ interface Socket {
 /**
  * Finds bridges on the loopback port range and keeps one WebSocket per
  * bridge. WebSocket traffic (a ping every 20 s) also keeps the MV3 service
- * worker alive while a client is connected.
+ * worker alive while a client is connected. Every Chrome profile runs this,
+ * so the hello names the profile and a bridge serving another profile closes
+ * the socket before any session starts. With the master switch off, nothing
+ * connects.
  */
 export class Connections {
   readonly #core: Core;
@@ -44,6 +47,8 @@ export class Connections {
 
   /** `force` skips the retry back-off (the LAN host just opened a bridge). */
   scan(force = false): void {
+    // Browsing events can wake the worker and call this before start(): the settings (master switch, profile) are not loaded yet.
+    if (!this.#started || !this.#core.settings.get().enabled) return;
     if (force) this.#retryAt.clear();
     const now = Date.now();
     for (let port = PORT_BASE; port < PORT_BASE + PORT_COUNT; port++) {
@@ -62,6 +67,22 @@ export class Connections {
     }
   }
 
+  /**
+   * Master switch turned off: ends every session of this profile. The release code lets a bridge
+   * that was only bound to this profile (no --profile) serve another profile.
+   */
+  closeAll(): void {
+    for (const socket of this.#sockets.values()) {
+      socket.rejected = true;
+      socket.ws.close(CLOSE_RELEASE, 'connections turned off in this Chrome profile');
+    }
+  }
+
+  /** The profile was renamed: reconnect to every bridge (each reconnects within a second if it still serves this profile). */
+  reconnectAll(): void {
+    for (const socket of this.#sockets.values()) socket.ws.close();
+  }
+
   #send(socket: Socket, msg: ExtToBridge): void {
     if (socket.ws.readyState === WebSocket.OPEN) socket.ws.send(JSON.stringify(msg));
   }
@@ -78,7 +99,8 @@ export class Connections {
     ws.onopen = () => {
       socket.opened = true;
       this.#failures.delete(port);
-      this.#send(socket, { t: 'hello', protocol: PROTOCOL_VERSION, extVersion: chrome.runtime.getManifest().version, userAgent: navigator.userAgent });
+      const { profileId, profileName } = this.#core.settings.get();
+      this.#send(socket, { t: 'hello', protocol: PROTOCOL_VERSION, extVersion: chrome.runtime.getManifest().version, userAgent: navigator.userAgent, profile: { id: profileId, name: profileName } });
     };
     ws.onmessage = (event) => this.#onMessage(socket, port, String(event.data));
     ws.onerror = () => {
@@ -93,6 +115,8 @@ export class Connections {
       }
       let delay: number;
       if (event.code === CLOSE_BUSY || socket.rejected) delay = 30_000;
+      // Ask again now and then: a bridge bound to another profile is released when that profile switches off.
+      else if (event.code === CLOSE_OTHER_PROFILE) delay = 10_000;
       else if (!socket.opened) {
         const n = (this.#failures.get(port) ?? 0) + 1;
         this.#failures.set(port, n);

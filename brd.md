@@ -56,7 +56,7 @@ flowchart LR
 <!-- AI: đây là danh sách module -->
 | Module | Mô tả | Trạng thái |
 |--------|-------|------------|
-| ket-noi | Kết nối MCP client với Chrome qua bridge cục bộ, hoặc từ máy khác trong mạng LAN khi người dùng cho phép; phiên làm việc của từng client; prompt mẫu cho các workflow | done |
+| ket-noi | Kết nối MCP client với Chrome qua bridge cục bộ, hoặc từ máy khác trong mạng LAN khi người dùng cho phép; mỗi client gắn với một profile Chrome; bật/tắt kết nối theo từng profile; phiên làm việc của từng client; prompt mẫu cho các workflow | done |
 | dieu-khien | Tab, cửa sổ, điều hướng; đọc hiểu trang; thao tác chuột/phím/form; chụp màn hình; chạy JavaScript; tải xuống, lịch sử, bookmark, clipboard, in PDF | done |
 | video | Xem và hiểu video trên trang: liệt kê, điều khiển phát, khung hình, storyboard, phụ đề, chép lời, xem một đoạn, thông tin media; quay tab thành video (để sau) | thực hiện |
 | devtools | Đọc và điều khiển dữ liệu DevTools: Console, Network, Performance, Elements, Application, giả lập, Issues, Memory, lệnh DevTools Protocol thô | done |
@@ -78,7 +78,7 @@ flowchart LR
 ### 2.2.0. Feature 0: Kết nối MCP client với Chrome
 - **Trạng thái**: done
 - **Module**: ket-noi
-- **Mô tả**: MCP client khởi chạy bridge cục bộ như một MCP server thông thường. Bridge mở một kênh nội bộ trên máy và chờ extension kết nối. Extension liên tục dò tìm các bridge đang chạy trên máy và tự kết nối; tự kết nối lại khi mất kết nối hoặc khi Chrome, extension hay MCP client khởi động lại. Nhiều MCP client chạy cùng lúc được: mỗi client có bridge riêng và extension giữ kết nối với tất cả. Bridge luôn liệt kê đầy đủ tool kể cả khi extension chưa kết nối. Khi agent gọi tool lúc chưa có kết nối, bridge chờ một khoảng ngắn để extension kịp nối vào; quá thời gian thì trả lỗi kèm hướng dẫn kiểm tra (Chrome đã mở chưa, extension đã bật chưa). Agent luôn có một tool cho biết tình trạng kết nối, phiên bản extension và phiên bản trình duyệt.
+- **Mô tả**: MCP client khởi chạy bridge cục bộ như một MCP server thông thường. Bridge mở một kênh nội bộ trên máy và chờ extension kết nối. Extension liên tục dò tìm các bridge đang chạy trên máy và tự kết nối; tự kết nối lại khi mất kết nối hoặc khi Chrome, extension hay MCP client khởi động lại. Nhiều MCP client chạy cùng lúc được: mỗi client có bridge riêng và extension giữ kết nối với tất cả. Khi Chrome có nhiều profile cùng bật extension, mỗi client chỉ làm việc với đúng một profile (feature 2.2.32). Bridge luôn liệt kê đầy đủ tool kể cả khi extension chưa kết nối. Khi agent gọi tool lúc chưa có kết nối, bridge chờ một khoảng ngắn để extension kịp nối vào; quá thời gian thì trả lỗi kèm hướng dẫn kiểm tra (Chrome đã mở chưa, extension đã bật chưa). Agent luôn có một tool cho biết tình trạng kết nối, phiên bản extension và phiên bản trình duyệt.
 - **Flow**:
 
 ```mermaid
@@ -98,6 +98,7 @@ flowchart TD
   - Kênh giữa bridge và extension chỉ lắng nghe trên địa chỉ loopback của máy, không mở ra mạng.
   - MCP client trên máy khác chỉ kết nối được khi người dùng bật cho phép kết nối LAN (feature 2.2.31); khi tắt, không có gì của Kyte WebMCP mở ra mạng.
   - Bridge từ chối mọi kết nối không đến từ extension Kyte WebMCP, kể cả kết nối từ trang web đang mở trong trình duyệt.
+  - Mỗi bridge chỉ phục vụ một profile Chrome; profile khác không bao giờ có phiên với bridge đó (feature 2.2.32).
   - Mất kết nối giữa chừng thì lệnh đang chạy phải kết thúc bằng lỗi rõ ràng, không treo agent.
   - Danh sách tool agent nhìn thấy không phụ thuộc việc extension đã kết nối hay chưa.
 
@@ -377,10 +378,10 @@ flowchart TD
 ### 2.2.25. Feature 25: Side panel
 - **Trạng thái**: done
 - **Module**: giao-dien
-- **Mô tả**: Bấm vào biểu tượng extension để mở side panel. Side panel hiển thị trạng thái kết nối (đang chờ MCP client, hoặc số phiên đang kết nối) và hướng dẫn cấu hình MCP client có nút sao chép; danh sách phiên (tên client, tab group, tab đích, số lệnh đã chạy) với nút Dừng/Tiếp tục cho từng phiên và nút Dừng tất cả; nhật ký hoạt động trực tiếp của các lệnh agent (thời gian, tên lệnh, tóm tắt tham số, thời lượng, thành công/lỗi), có lọc và xem chi tiết; tool WebMCP của tab hiện tại; cài đặt (bật/tắt chỉ báo trên trang, chọn model chép lời); công tắc cho phép máy khác trong mạng LAN kết nối kèm thông tin kết nối cho máy kia (feature 2.2.31).
+- **Mô tả**: Bấm vào biểu tượng extension để mở side panel. Side panel hiển thị trạng thái kết nối (đang chờ MCP client, hoặc số phiên đang kết nối) và hướng dẫn cấu hình MCP client có nút sao chép; danh sách phiên (tên client, tab group, tab đích, số lệnh đã chạy) với nút Dừng/Tiếp tục cho từng phiên và nút Dừng tất cả; nhật ký hoạt động trực tiếp của các lệnh agent (thời gian, tên lệnh, tóm tắt tham số, thời lượng, thành công/lỗi), có lọc và xem chi tiết; tool WebMCP của tab hiện tại; cài đặt (tên của profile Chrome này, bật/tắt chỉ báo trên trang, chọn model chép lời); công tắc cho phép máy khác trong mạng LAN kết nối kèm thông tin kết nối cho máy kia (feature 2.2.31); công tắc tổng bật/tắt kết nối của profile (feature 2.2.33). Lệnh cấu hình MCP client trong mục hướng dẫn kết nối gắn sẵn tên profile đang mở side panel (feature 2.2.32).
 - **Giao diện**:
   - Phong cách giống phần Cài đặt hệ thống (System Settings) của macOS, theo chế độ sáng/tối của máy: các mục là nhóm bo góc có tiêu đề phía trên, công tắc và nút kiểu macOS. Panel trong DevTools và chỉ báo trên trang dùng cùng phong cách; icon extension là chữ K trên nền xanh bo góc kiểu icon ứng dụng macOS.
-  - Phần đầu: trạng thái kết nối và nút Dừng tất cả.
+  - Phần đầu: trạng thái kết nối, nút Dừng tất cả và công tắc tổng bật/tắt kết nối.
   - Các mục: Phiên, Nhật ký hoạt động, WebMCP của tab hiện tại, Cài đặt, Điều khiển từ máy khác (LAN), Hướng dẫn kết nối.
 - **Lưu ý**: <!-- constraint cứng — không được bỏ qua -->
   - Trạng thái trên side panel tự cập nhật, người dùng không phải tải lại side panel.
@@ -473,7 +474,7 @@ flowchart TD
 
   Mã truy cập được tạo ngẫu nhiên ở lần bật đầu tiên, được giữ qua các lần khởi động lại, và người dùng đổi được bất kỳ lúc nào; đổi mã thì mọi máy đang dùng mã cũ bị ngắt và chỉ mã mới kết nối được. Mỗi MCP client từ máy khác là một phiên như client trên máy (feature 2.2.1): có tab group riêng, Dừng/Tiếp tục được, có trong nhật ký hoạt động; tên phiên kèm địa chỉ của máy kết nối và có nhãn LAN. Phần việc phía bridge (chép lời Whisper, kênh DevTools đầy đủ, ghi file) chạy trên máy có Chrome, nên đường dẫn file trong kết quả và trong tham số là đường dẫn trên máy có Chrome; agent được báo điều này khi kết nối và trong tool tình trạng kết nối.
 
-  Điểm kết nối LAN cần một thành phần cài một lần trên máy có Chrome, bằng một lệnh của Kyte WebMCP đăng ký thành phần này với Chrome cho người dùng hiện tại; từ đó công tắc tự khởi động và tắt nó. Bật công tắc khi chưa cài thì side panel báo chưa cài và hiện lệnh cài có nút sao chép; cài xong thì điểm kết nối tự mở trong khoảng nửa phút, không cần bật lại công tắc. Công tắc được ghi nhớ: Chrome hoặc extension khởi động lại thì điểm kết nối tự mở lại, còn MCP client ở máy khác phải kết nối lại.
+  Mỗi profile Chrome bật LAN có điểm kết nối riêng trên một cổng riêng trong một dải cổng cố định; cổng của mỗi profile được ghi nhớ để lệnh đã cấu hình ở máy kia vẫn dùng được, và client nối vào cổng của profile nào thì chỉ điều khiển profile đó. Điểm kết nối LAN cần một thành phần cài một lần trên máy có Chrome, bằng một lệnh của Kyte WebMCP đăng ký thành phần này với Chrome cho người dùng hiện tại; từ đó công tắc tự khởi động và tắt nó. Bật công tắc khi chưa cài thì side panel báo chưa cài và hiện lệnh cài có nút sao chép; cài xong thì điểm kết nối tự mở trong khoảng nửa phút, không cần bật lại công tắc. Công tắc được ghi nhớ: Chrome hoặc extension khởi động lại thì điểm kết nối tự mở lại, còn MCP client ở máy khác phải kết nối lại.
 
   Client ở máy khác tự kết thúc phiên thì phiên được gỡ khỏi trình duyệt ngay. Client ngừng hoạt động mà không báo (bị tắt đột ngột, mất mạng) thì sau khoảng một phút không còn yêu cầu hay kênh nhận thông báo nào đang mở, phiên của nó trên trình duyệt được gỡ như khi phiên kết thúc; client đó gọi lại thì phiên được mở lại tự động. Sau một ngày không hoạt động, client phải kết nối lại từ đầu.
 - **Giao diện**:
@@ -503,6 +504,8 @@ flowchart TD
 ```
 - **Lưu ý**: <!-- constraint cứng — không được bỏ qua -->
   - Mặc định công tắc tắt; khi tắt, không có cổng nào của Kyte WebMCP mở ra mạng.
+  - Nhiều profile cùng bật LAN không tranh cổng của nhau; client LAN chỉ điều khiển profile sở hữu cổng nó nối vào.
+  - Công tắc tổng của profile tắt thì điểm kết nối LAN của profile đó đóng, kể cả khi công tắc LAN đang bật.
   - Tắt công tắc thì điểm kết nối LAN đóng hẳn và mọi phiên từ máy khác kết thúc ngay; phiên của MCP client trên cùng máy không bị ảnh hưởng.
   - Chỉ nhận kết nối từ địa chỉ thuộc mạng nội bộ (địa chỉ riêng, link-local, loopback); địa chỉ công cộng bị từ chối.
   - Mọi yêu cầu phải kèm đúng mã truy cập; thiếu hoặc sai mã thì bị từ chối.
@@ -511,6 +514,56 @@ flowchart TD
   - Đổi mã truy cập thì mọi phiên dùng mã cũ kết thúc và mã cũ không dùng được nữa.
   - Kênh giữa extension và bridge vẫn chỉ ở loopback; chỉ điểm kết nối MCP mở ra mạng LAN.
   - Hệ thống không tự đổi cấu hình tường lửa của máy.
+
+---
+
+### 2.2.32. Feature 32: Nhiều profile Chrome, mỗi MCP client một profile
+- **Trạng thái**: done
+- **Module**: ket-noi
+- **Mô tả**: Một Chrome có thể có nhiều profile cùng bật extension; mỗi profile là một bản extension riêng nhưng cùng tìm tới các bridge trên máy. Để không tranh nhau, mỗi profile có một tên (mặc định là một mã ngẫu nhiên kiểu "Profile 7F3A", người dùng đổi trong phần Cài đặt của side panel) và mỗi MCP client chỉ làm việc với đúng một profile:
+  - **Client ghim theo tên**: khai báo tên profile khi cấu hình MCP client. Lệnh và cấu hình JSON trong mục hướng dẫn kết nối của side panel đã gắn sẵn tên profile đang mở side panel, và tên mục MCP server khác nhau theo profile, nên thêm được cả nhiều profile vào cùng một MCP client. Profile mang tên khác không bao giờ nhận client đó, kể cả khi nó tìm thấy bridge trước. Tên so khớp không phân biệt hoa thường và khoảng trắng hai đầu. Không profile nào mang tên đó thì client không kết nối, và tool tình trạng kết nối cho agent biết client đang chờ profile nào.
+  - **Client không ghim tên** (cấu hình cũ): gắn với profile đầu tiên kết nối tới nó và giữ profile đó tới khi client tắt, kể cả lúc Chrome tạm dừng extension của profile đó khi rảnh; chỉ khi profile đó tắt công tắc tổng (feature 2.2.33) thì client mới được chuyển sang profile khác đang bật.
+
+  Đổi tên profile thì các client ghim theo tên được xét lại ngay: client ghim tên cũ rời profile, client ghim tên mới vào profile. Tool tình trạng kết nối cho agent biết client đang gắn với profile nào và theo cách nào (ghim tên hay profile đầu tiên).
+- **Giao diện**:
+  - Cài đặt: ô "Tên của profile Chrome này".
+  - Hướng dẫn kết nối: lệnh và cấu hình JSON kèm tên profile, một dòng ghi chú các lệnh này chỉ kết nối vào profile đang mở side panel.
+- **Flow**:
+
+```mermaid
+flowchart TD
+    A["Extension của một profile tìm thấy một bridge"] --> B["Extension báo danh tính profile (mã và tên)"]
+    B --> C{"Client của bridge ghim tên profile?"}
+    C -->|Có| D{"Đúng tên?"}
+    D -->|Không| R["Từ chối; profile này không có phiên với client đó"]
+    D -->|Có| S["Phiên bắt đầu trong profile này"]
+    C -->|Không| E{"Client đã gắn với profile nào chưa?"}
+    E -->|Chưa| G["Gắn với profile này"] --> S
+    E -->|Đúng profile này| S
+    E -->|Profile khác| R
+    S --> F{"Profile đang giữ client tắt công tắc tổng?"}
+    F -->|Có, client không ghim tên| H["Bỏ gắn; profile khác đang bật được nhận client"]
+    F -->|Không| S
+```
+- **Lưu ý**: <!-- constraint cứng — không được bỏ qua -->
+  - Một MCP client không bao giờ có phiên đồng thời ở hai profile.
+  - Client ghim tên chỉ có phiên trong profile mang đúng tên đó.
+  - Client không ghim tên không chuyển sang profile khác khi profile đang giữ nó chỉ tạm dừng hay mất kết nối; chỉ chuyển khi profile đó tắt công tắc tổng.
+  - Profile bị từ chối không tạo phiên, không hiện client đó trong danh sách phiên và nhật ký.
+  - Tab do client mở luôn nằm trong profile của client đó.
+
+---
+
+### 2.2.33. Feature 33: Công tắc tổng bật/tắt kết nối
+- **Trạng thái**: done
+- **Module**: ket-noi
+- **Mô tả**: Thanh đầu side panel có một công tắc tổng cho profile đang mở. Tắt công tắc thì mọi phiên của profile đó kết thúc ngay (cả phiên từ máy trên lẫn từ LAN, dọn sạch như khi phiên kết thúc thường), điểm kết nối LAN của profile đó đóng, và profile ngừng nhận MCP client mới cho tới khi người dùng bật lại. Trạng thái công tắc được ghi nhớ qua các lần Chrome hay extension khởi động lại. Client không ghim tên đang gắn với profile này được chuyển sang profile khác đang bật; client ghim tên profile này chờ tới khi công tắc bật lại thì tự kết nối lại. Mặc định công tắc bật.
+- **Giao diện**:
+  - Công tắc ở góc phải thanh đầu, có nhãn cho trình đọc màn hình; khi tắt, dòng trạng thái ghi "Đã tắt kết nối", mục Phiên hướng dẫn bật lại, mục LAN báo profile đang tắt kết nối, biểu tượng extension hiện nhãn OFF.
+- **Lưu ý**: <!-- constraint cứng — không được bỏ qua -->
+  - Khi công tắc tắt, profile đó không có phiên nào và không mở cổng LAN nào.
+  - Công tắc tắt vẫn giữ nguyên tắt sau khi Chrome tạm dừng rồi đánh thức extension hoặc khởi động lại Chrome.
+  - Tắt công tắc ở một profile không ảnh hưởng phiên của profile khác.
 
 ---
 

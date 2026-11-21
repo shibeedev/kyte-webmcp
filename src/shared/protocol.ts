@@ -37,8 +37,17 @@ export type BridgeToExt =
   | { t: 'svc_result'; id: number; ok: false; error: string }
   | { t: 'pong' };
 
+/**
+ * The Chrome profile an extension instance runs in. Every profile runs its own copy of the extension
+ * (same extension id), so bridges tell them apart by this: `id` is random and stable, `name` is set by the user.
+ */
+export interface ProfileInfo {
+  id: string;
+  name: string;
+}
+
 export type ExtToBridge =
-  | { t: 'hello'; protocol: number; extVersion: string; userAgent: string }
+  | { t: 'hello'; protocol: number; extVersion: string; userAgent: string; profile?: ProfileInfo }
   | { t: 'result'; id: number; result: ToolResult }
   | { t: 'svc'; id: number; name: string; args: Record<string, unknown> }
   | { t: 'page_tools'; tabId: number | null; tools: PageTool[] }
@@ -49,7 +58,7 @@ export type ExtToBridge =
  * while the user allows LAN connections. Each LAN client then gets its own
  * bridge on the loopback port range; `welcome.remote` carries its address.
  */
-export type ExtToLanHost = { t: 'start'; token: string };
+export type ExtToLanHost = { t: 'start'; token: string; profileId: string; port: number };
 
 export type LanHostToExt =
   | { t: 'listening'; port: number; addresses: string[] }
@@ -59,3 +68,7 @@ export type LanHostToExt =
 /** Close codes the bridge uses so the extension can react without parsing reasons. */
 export const CLOSE_BUSY = 4001;
 export const CLOSE_PROTOCOL = 4002;
+/** The bridge serves another Chrome profile (pinned with --profile, or bound to the first profile that connected). */
+export const CLOSE_OTHER_PROFILE = 4003;
+/** Sent by the extension: this profile turned its connections off, so an unpinned bridge may move to another profile. */
+export const CLOSE_RELEASE = 4004;

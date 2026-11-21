@@ -7,10 +7,11 @@ export function t(key: string, substitutions?: string | string[]): string {
   }
 }
 
-/** Fills every element carrying data-i18n / data-i18n-title / data-i18n-placeholder. */
+/** Fills every element carrying data-i18n / data-i18n-title / data-i18n-placeholder / data-i18n-aria. */
 export function localize(root: ParentNode = document): void {
   for (const el of root.querySelectorAll<HTMLElement>('[data-i18n]')) el.textContent = t(el.dataset.i18n!);
   for (const el of root.querySelectorAll<HTMLElement>('[data-i18n-title]')) el.title = t(el.dataset.i18nTitle!);
   for (const el of root.querySelectorAll<HTMLInputElement>('[data-i18n-placeholder]')) el.placeholder = t(el.dataset.i18nPlaceholder!);
+  for (const el of root.querySelectorAll<HTMLElement>('[data-i18n-aria]')) el.setAttribute('aria-label', t(el.dataset.i18nAria!));
   document.documentElement.lang = chrome.i18n.getUILanguage().startsWith('vi') ? 'vi' : 'en';
 }

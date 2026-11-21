@@ -9,7 +9,7 @@ import { bridgeFeatures } from '../features/bridge.ts';
 import { FullCdpClient } from '../features/full-devtools/client.ts';
 import { runBroker } from '../features/full-devtools/broker.ts';
 import { launchAgentChrome } from '../features/full-devtools/launcher.ts';
-import { ExtensionHub, type ServiceHandler } from './hub.ts';
+import { ExtensionHub, type HubOptions, type ServiceHandler } from './hub.ts';
 import { createMcpServer } from './mcp-server.ts';
 import { defaultOutputDir, fileServices } from './files.ts';
 import { runLanHost } from './lan.ts';
@@ -20,8 +20,10 @@ import type { BridgeContext } from './types.ts';
 const HELP = `kyte-webmcp ${pkg.version} — MCP server for the Kyte WebMCP Chrome extension
 
 Usage:
-  kyte-webmcp [--port <n>] [--output-dir <dir>]
+  kyte-webmcp [--profile <name>] [--port <n>] [--output-dir <dir>]
       Run the MCP bridge on stdio. MCP clients (Claude Code, Claude Desktop, Cursor…) start this.
+      --profile pins it to the Chrome profile with that name (shown in the side panel); without it,
+      the bridge stays with the first Chrome profile that connects.
   kyte-webmcp chrome [--chrome-path <exe>] [--profile-dir <dir>] [--url <url>]
       Start Chrome with a dedicated agent profile: full DevTools access without consent prompts.
   kyte-webmcp install
@@ -36,12 +38,12 @@ Usage:
 
 const cliPath = fileURLToPath(import.meta.url);
 
-/** One bridge = one MCP client: the extension hub plus the MCP server. `remote` is the LAN client's address, if any. */
-function createBridge(outputDir: string, remote = ''): { ctx: BridgeContext; server: Server } {
-  const ctx = { outputDir, version: pkg.version, fullCdp: new FullCdpClient(cliPath), remote } as BridgeContext;
+/** One bridge = one MCP client: the extension hub plus the MCP server, for the Chrome profile `options` names. */
+function createBridge(outputDir: string, options: HubOptions = {}): { ctx: BridgeContext; server: Server } {
+  const ctx = { outputDir, version: pkg.version, fullCdp: new FullCdpClient(cliPath), remote: options.remote ?? '' } as BridgeContext;
   const services: Record<string, ServiceHandler> = { ...fileServices(outputDir) };
   for (const f of bridgeFeatures) Object.assign(services, f.services?.(ctx));
-  ctx.hub = new ExtensionHub(pkg.version, services, cliPath, remote);
+  ctx.hub = new ExtensionHub(pkg.version, services, cliPath, options);
   return { ctx, server: createMcpServer(ctx, allToolSpecs, bridgeFeatures) };
 }
 
@@ -50,6 +52,7 @@ async function main(): Promise<void> {
     allowPositionals: true,
     options: {
       port: { type: 'string' },
+      profile: { type: 'string' },
       'output-dir': { type: 'string' },
       'chrome-path': { type: 'string' },
       'profile-dir': { type: 'string' },
@@ -87,10 +90,11 @@ async function main(): Promise<void> {
     return;
   }
   const outputDir = path.resolve(values['output-dir'] ?? process.env.KYTE_WEBMCP_OUTPUT_DIR ?? defaultOutputDir());
-  if (command === 'lan-host') return runLanHost((remote) => createBridge(outputDir, remote));
+  if (command === 'lan-host') return runLanHost((remote, profileId) => createBridge(outputDir, { remote, profileId }));
   if (command) throw new Error(`Unknown command "${command}"\n\n${HELP}`);
 
-  const { ctx, server } = createBridge(outputDir);
+  const profile = (values.profile ?? process.env.KYTE_WEBMCP_PROFILE ?? '').trim();
+  const { ctx, server } = createBridge(outputDir, profile ? { profile } : {});
   const port = await ctx.hub.listen(values.port ? Number(values.port) : undefined);
   log(`bridge ${pkg.version} listening on 127.0.0.1:${port}; waiting for the Chrome extension`);
 

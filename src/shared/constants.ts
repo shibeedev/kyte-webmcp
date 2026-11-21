@@ -5,8 +5,10 @@ export const PORT_BASE = 17831;
 export const PORT_COUNT = 10;
 export const WS_PATH = '/kyte-webmcp';
 
-/** MCP over HTTP for other machines on the LAN, served while the user allows LAN connections. */
+/** MCP over HTTP for other machines on the LAN, served while the user allows LAN connections (per Chrome profile). */
 export const LAN_PORT = 17850;
+/** Each Chrome profile's LAN endpoint takes one port of [LAN_PORT, LAN_PORT + LAN_PORT_COUNT), remembered per profile. */
+export const LAN_PORT_COUNT = 10;
 export const LAN_PATH = '/mcp';
 /** Chrome native messaging host that runs the LAN endpoint (registered by `kyte-webmcp install`). */
 export const NATIVE_HOST = 'com.kyte.webmcp';
